@@ -5,3 +5,7 @@ export function signIn() {
 export function signUp() {
   return Promise.resolve({ username: "demo-user" });
 }
+
+export function signOut() {
+  return Promise.resolve();
+}
