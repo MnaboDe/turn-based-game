@@ -22,7 +22,7 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
   return (
     <div className="lobby-container">
       <h2>Lobby</h2>
-      {user && <p>Welcome, {user.username}</p>}
+      {user && <p>Welcome, {user.username} (ID: {user.userId})</p>}
 
       {!searching && (
         <div className="lobby-actions">
