@@ -1,7 +1,6 @@
-const cognitoDomain =
-  "https://us-east-1kitzazvvy.auth.us-east-1.amazoncognito.com";
-const clientId = "46rh9ho6cs79i1ojmmjhbogm8l";
-const redirectUri = "http://localhost:5173/";
+import { authConfig } from "../config/authConfig";
+
+const { cognitoDomain, clientId, redirectUri } = authConfig;
 
 export function signIn() {
   const loginUrl =

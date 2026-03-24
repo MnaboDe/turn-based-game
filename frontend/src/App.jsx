@@ -10,6 +10,7 @@ import {
 import Login from "./screens/Login";
 import Lobby from "./screens/Lobby";
 import Game from "./screens/Game";
+import Loading from "./screens/Loading";
 
 function App() {
   const hasAuthCode = new URLSearchParams(window.location.search).has("code");
@@ -86,7 +87,7 @@ function App() {
     <main>
       <h1>Turn-Based Game</h1>
 
-      {isLoading && <p>Signing you in...</p>}
+      {isLoading && <Loading />}
 
       {!isLoading && screen === "login" && <Login />}
 
