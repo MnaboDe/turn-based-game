@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Login from "./screens/Login";
-import Lobby from "./screens/Lobby";
 import Game from "./screens/Game";
+import Lobby from "./screens/Lobby";
+import Login from "./screens/Login";
 
 function App() {
   const [screen, setScreen] = useState("login");
@@ -31,7 +31,9 @@ function App() {
         />
       )}
 
-      {screen === "game" && <Game onBackToLobby={() => setScreen("lobby")} />}
+      {screen === "game" && (
+        <Game user={user} onBackToLobby={() => setScreen("lobby")} />
+      )}
     </main>
   );
 }

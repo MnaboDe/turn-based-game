@@ -1,9 +1,10 @@
 import "./Game.css";
 
-function Game({ onBackToLobby }) {
+function Game({ user, onBackToLobby }) {
   return (
     <div className="game-container">
       <h2>Game</h2>
+      {user && <p>Player: {user.username}</p>}
       <p>Match found.</p>
       <p>Game screen is under construction.</p>
       <button onClick={onBackToLobby}>Back to Lobby</button>
