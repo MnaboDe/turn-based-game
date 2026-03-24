@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { signOut } from "../api/auth";
 import "./Lobby.css";
 
 function Lobby({ user, onFindMatch, onBackToHome }) {
@@ -14,23 +13,15 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
     }, 2000);
   };
 
-  const handleSignOut = () => {
-    signOut();
-  };
-
   return (
     <div className="lobby-container">
       <h2>Lobby</h2>
-      {user && (
-        <p>
-          Welcome, {user.username} (ID: {user.userId})
-        </p>
-      )}
+      {user && <p>Welcome, {user.username} (ID: {user.userId})</p>}
 
       {!searching && (
         <div className="lobby-actions">
           <button onClick={handleFindMatch}>Find Match</button>
-          <button onClick={handleSignOut}>Sign Out</button>
+          <button onClick={onBackToHome}>Sign Out</button>
         </div>
       )}
 

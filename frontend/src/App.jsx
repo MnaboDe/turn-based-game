@@ -5,6 +5,7 @@ import {
   saveTokens,
   getTokens,
   clearTokens,
+  signOut,
 } from "./api/auth";
 import Login from "./screens/Login";
 import Lobby from "./screens/Lobby";
@@ -19,6 +20,20 @@ function App() {
   const processed = useRef(false);
 
   useEffect(() => {
+    const existingTokens = getTokens();
+
+    if (existingTokens) {
+      const userData = parseJwt(existingTokens.id_token);
+
+      setUser({
+        username: userData.email || userData["cognito:username"],
+        userId: userData.sub,
+      });
+
+      setScreen("lobby");
+      return;
+    }
+
     const handleCognitoCallback = async () => {
       if (processed.current) {
         return;
@@ -61,8 +76,10 @@ function App() {
   }, []);
 
   const handleSignOut = () => {
+    clearTokens();
     setUser(null);
     setScreen("login");
+    signOut();
   };
 
   return (
