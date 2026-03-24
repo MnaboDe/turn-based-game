@@ -4,7 +4,10 @@
 }
 
 .lobby-actions {
-  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .lobby-actions button {

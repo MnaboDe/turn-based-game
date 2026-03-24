@@ -13,10 +13,15 @@ function App() {
       {screen === "login" && <Login onSignIn={() => setScreen("lobby")} />}
 
       {screen === "lobby" && (
-        <Lobby onFindMatch={() => setScreen("game")} />
-      )}
+  <Lobby
+    onFindMatch={() => setScreen("game")}
+    onBackToHome={() => setScreen("login")}
+  />
+)}
 
-      {screen === "game" && <Game />}
+      {screen === "game" && (
+        <Game onBackToLobby={() => setScreen("lobby")} />
+      )}
     </main>
   );
 }

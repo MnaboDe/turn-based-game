@@ -1,10 +1,12 @@
 import "./Game.css";
 
-function Game() {
+function Game({ onBackToLobby }) {
   return (
     <div className="game-container">
       <h2>Game</h2>
-      <p>Match found. Game screen will be here.</p>
+      <p>Match found.</p>
+      <p>Game screen is under construction.</p>
+      <button onClick={onBackToLobby}>Back to Lobby</button>
     </div>
   );
 }
