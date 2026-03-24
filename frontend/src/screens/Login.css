@@ -1,0 +1,16 @@
+.login-container {
+  padding-top: 80px;
+  text-align: center;
+}
+
+.login-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.login-actions button {
+  padding: 10px 18px;
+  font-size: 16px;
+}

@@ -1,8 +1,14 @@
+import "./Login.css";
+
 function Login() {
   return (
-    <div>
+    <div className="login-container">
       <h2>Login</h2>
-      <p>Login screen will be here.</p>
+
+      <div className="login-actions">
+        <button>Sign In</button>
+        <button>Sign Up</button>
+      </div>
     </div>
   );
 }
