@@ -26,7 +26,12 @@ export function signUp() {
 }
 
 export function signOut() {
-  return Promise.resolve();
+  const logoutUrl =
+    `${cognitoDomain}/logout` +
+    `?client_id=${clientId}` +
+    `&logout_uri=${encodeURIComponent(redirectUri)}`;
+
+  window.location.assign(logoutUrl);
 }
 
 export async function exchangeCodeForToken(code) {
@@ -58,4 +63,17 @@ export function parseJwt(token) {
   const base64Payload = token.split(".")[1];
   const decodedPayload = atob(base64Payload);
   return JSON.parse(decodedPayload);
+}
+
+export function saveTokens(tokens) {
+  localStorage.setItem("tokens", JSON.stringify(tokens));
+}
+
+export function getTokens() {
+  const raw = localStorage.getItem("tokens");
+  return raw ? JSON.parse(raw) : null;
+}
+
+export function clearTokens() {
+  localStorage.removeItem("tokens");
 }

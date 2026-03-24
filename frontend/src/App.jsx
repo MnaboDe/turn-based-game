@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { exchangeCodeForToken, parseJwt } from "./api/auth";
+import {
+  exchangeCodeForToken,
+  parseJwt,
+  saveTokens,
+  getTokens,
+  clearTokens,
+} from "./api/auth";
 import Login from "./screens/Login";
 import Lobby from "./screens/Lobby";
 import Game from "./screens/Game";
@@ -31,6 +37,8 @@ function App() {
       try {
         const tokens = await exchangeCodeForToken(code);
         console.log("Tokens:", tokens);
+
+        saveTokens(tokens);
 
         const userData = parseJwt(tokens.id_token);
 
