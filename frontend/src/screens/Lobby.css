@@ -1,0 +1,13 @@
+.lobby-container {
+  padding-top: 80px;
+  text-align: center;
+}
+
+.lobby-actions {
+  margin-top: 16px;
+}
+
+.lobby-actions button {
+  padding: 10px 18px;
+  font-size: 16px;
+}
