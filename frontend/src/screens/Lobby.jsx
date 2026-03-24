@@ -2,7 +2,7 @@ import { useState } from "react";
 import { signOut } from "../api/auth";
 import "./Lobby.css";
 
-function Lobby({ onFindMatch, onBackToHome }) {
+function Lobby({ user, onFindMatch, onBackToHome }) {
   const [searching, setSearching] = useState(false);
 
   const handleFindMatch = () => {
@@ -22,6 +22,7 @@ function Lobby({ onFindMatch, onBackToHome }) {
   return (
     <div className="lobby-container">
       <h2>Lobby</h2>
+      {user && <p>Welcome, {user.username}</p>}
 
       {!searching && (
         <div className="lobby-actions">

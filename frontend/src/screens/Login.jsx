@@ -1,15 +1,15 @@
 import "./Login.css";
 import { signIn, signUp } from "../api/auth";
 
-function Login({ onSignIn }) {
+function Login({ onAuthSuccess }) {
   const handleSignIn = async () => {
-    await signIn();
-    onSignIn();
+    const user = await signIn();
+    onAuthSuccess(user);
   };
 
   const handleSignUp = async () => {
-    await signUp();
-    onSignIn();
+    const user = await signUp();
+    onAuthSuccess(user);
   };
 
   return (

@@ -5,17 +5,29 @@ import Game from "./screens/Game";
 
 function App() {
   const [screen, setScreen] = useState("login");
+  const [user, setUser] = useState(null);
+
+  const handleAuthSuccess = (authenticatedUser) => {
+    setUser(authenticatedUser);
+    setScreen("lobby");
+  };
+
+  const handleSignOut = () => {
+    setUser(null);
+    setScreen("login");
+  };
 
   return (
     <main>
       <h1>Turn-Based Game</h1>
 
-      {screen === "login" && <Login onSignIn={() => setScreen("lobby")} />}
+      {screen === "login" && <Login onAuthSuccess={handleAuthSuccess} />}
 
       {screen === "lobby" && (
         <Lobby
+          user={user}
           onFindMatch={() => setScreen("game")}
-          onBackToHome={() => setScreen("login")}
+          onBackToHome={handleSignOut}
         />
       )}
 
