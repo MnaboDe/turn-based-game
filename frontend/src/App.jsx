@@ -1,9 +1,9 @@
 function App() {
   return (
-    <div>
+    <main>
       <h1>Turn-Based Game</h1>
-      <p>Frontend is running.</p>
-    </div>
+      <button>Find Match</button>
+    </main>
   );
 }
 
