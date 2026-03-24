@@ -1,15 +1,13 @@
 import "./Login.css";
 import { signIn, signUp } from "../api/auth";
 
-function Login({ onAuthSuccess }) {
-  const handleSignIn = async () => {
-    const user = await signIn();
-    onAuthSuccess(user);
+function Login() {
+  const handleSignIn = () => {
+    signIn(); // redirect to Cognito
   };
 
-  const handleSignUp = async () => {
-    const user = await signUp();
-    onAuthSuccess(user);
+  const handleSignUp = () => {
+    signUp(); // redirect to Cognito
   };
 
   return (

@@ -1,16 +1,56 @@
-import { useState } from "react";
-import Game from "./screens/Game";
-import Lobby from "./screens/Lobby";
+import { useEffect, useRef, useState } from "react";
+import { exchangeCodeForToken, parseJwt } from "./api/auth";
 import Login from "./screens/Login";
+import Lobby from "./screens/Lobby";
+import Game from "./screens/Game";
 
 function App() {
-  const [screen, setScreen] = useState("login");
-  const [user, setUser] = useState(null);
+  const hasAuthCode = new URLSearchParams(window.location.search).has("code");
 
-  const handleAuthSuccess = (authenticatedUser) => {
-    setUser(authenticatedUser);
-    setScreen("lobby");
-  };
+  const [screen, setScreen] = useState(hasAuthCode ? "callback" : "login");
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(hasAuthCode);
+  const processed = useRef(false);
+
+  useEffect(() => {
+    const handleCognitoCallback = async () => {
+      if (processed.current) {
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+
+      if (!code) {
+        return;
+      }
+
+      setIsLoading(true);
+      processed.current = true;
+
+      try {
+        const tokens = await exchangeCodeForToken(code);
+        console.log("Tokens:", tokens);
+
+        const userData = parseJwt(tokens.id_token);
+
+        setUser({
+          username: userData.email || userData["cognito:username"],
+          userId: userData.sub,
+        });
+
+        setScreen("lobby");
+        window.history.replaceState({}, document.title, "/");
+      } catch (error) {
+        console.error("Token exchange failed:", error);
+        setScreen("login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    handleCognitoCallback();
+  }, []);
 
   const handleSignOut = () => {
     setUser(null);
@@ -21,7 +61,9 @@ function App() {
     <main>
       <h1>Turn-Based Game</h1>
 
-      {screen === "login" && <Login onAuthSuccess={handleAuthSuccess} />}
+      {isLoading && <p>Signing you in...</p>}
+
+      {!isLoading && screen === "login" && <Login />}
 
       {screen === "lobby" && (
         <Lobby
