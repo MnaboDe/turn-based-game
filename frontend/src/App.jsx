@@ -1,21 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { signOut } from "./api/auth";
+import { clearTokens } from "./api/authStorage";
 import {
-  exchangeCodeForToken,
-  parseJwt,
-  saveTokens,
-  getTokens,
-  clearTokens,
-  signOut,
-  validateCallbackState,
-  validateIdTokenNonce,
-} from "./api/auth";
+  hasAuthCodeInUrl,
+  restoreUserFromStoredTokens,
+  processCognitoCallback,
+} from "./app/initAuth";
 import Login from "./screens/Login";
 import Lobby from "./screens/Lobby";
 import Game from "./screens/Game";
 import Loading from "./screens/Loading";
 
 function App() {
-  const hasAuthCode = new URLSearchParams(window.location.search).has("code");
+  const hasAuthCode = hasAuthCodeInUrl();
 
   const [screen, setScreen] = useState(hasAuthCode ? "callback" : "login");
   const [user, setUser] = useState(null);
@@ -23,24 +20,13 @@ function App() {
   const processed = useRef(false);
 
   useEffect(() => {
-    const existingTokens = getTokens();
+    const restoredSession = restoreUserFromStoredTokens();
 
-    if (existingTokens) {
-      try {
-        const userData = parseJwt(existingTokens.id_token);
-
-        setUser({
-          username: userData.email || userData["cognito:username"],
-          userId: userData.sub,
-        });
-
-        setScreen("lobby");
-        setIsLoading(false);
-        return;
-      } catch (error) {
-        console.error("Failed to restore user from stored token:", error);
-        clearTokens();
-      }
+    if (restoredSession) {
+      setUser(restoredSession.user);
+      setScreen("lobby");
+      setIsLoading(false);
+      return;
     }
 
     const handleCognitoCallback = async () => {
@@ -48,11 +34,7 @@ function App() {
         return;
       }
 
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      const state = params.get("state");
-
-      if (!code) {
+      if (!hasAuthCodeInUrl()) {
         setIsLoading(false);
         return;
       }
@@ -61,22 +43,15 @@ function App() {
       processed.current = true;
 
       try {
-        validateCallbackState(state);
+        const callbackSession = await processCognitoCallback();
 
-        const tokens = await exchangeCodeForToken(code);
-        console.log("Tokens:", tokens);
+        if (!callbackSession) {
+          setScreen("login");
+          return;
+        }
 
-        saveTokens(tokens);
-
-        const userData = validateIdTokenNonce(tokens.id_token);
-
-        setUser({
-          username: userData.email || userData["cognito:username"],
-          userId: userData.sub,
-        });
-
+        setUser(callbackSession.user);
         setScreen("lobby");
-        window.history.replaceState({}, document.title, "/");
       } catch (error) {
         console.error("Authentication callback failed:", error);
         clearTokens();

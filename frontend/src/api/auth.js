@@ -1,11 +1,19 @@
 import { authConfig } from "../config/authConfig";
+import { parseJwt } from "./jwt";
+import {
+  savePkceVerifier,
+  getPkceVerifier,
+  saveOAuthState,
+  getOAuthState,
+  saveOAuthNonce,
+  getOAuthNonce,
+  clearOAuthState,
+  clearOAuthNonce,
+  clearOAuthTransaction,
+  clearTokens,
+} from "./authStorage";
 
 const { cognitoDomain, clientId, redirectUri } = authConfig;
-
-const TOKENS_STORAGE_KEY = "tokens";
-const PKCE_VERIFIER_STORAGE_KEY = "pkce_code_verifier";
-const OAUTH_STATE_STORAGE_KEY = "oauth_state";
-const OAUTH_NONCE_STORAGE_KEY = "oauth_nonce";
 const OAUTH_SCOPE = "openid email";
 
 // Generate a cryptographically random string
@@ -47,48 +55,6 @@ async function generateCodeChallenge(codeVerifier) {
   const digest = await crypto.subtle.digest("SHA-256", data);
 
   return base64UrlEncode(digest);
-}
-
-function savePkceVerifier(codeVerifier) {
-  sessionStorage.setItem(PKCE_VERIFIER_STORAGE_KEY, codeVerifier);
-}
-
-function getPkceVerifier() {
-  return sessionStorage.getItem(PKCE_VERIFIER_STORAGE_KEY);
-}
-
-function clearPkceVerifier() {
-  sessionStorage.removeItem(PKCE_VERIFIER_STORAGE_KEY);
-}
-
-function saveOAuthState(state) {
-  sessionStorage.setItem(OAUTH_STATE_STORAGE_KEY, state);
-}
-
-function getOAuthState() {
-  return sessionStorage.getItem(OAUTH_STATE_STORAGE_KEY);
-}
-
-function clearOAuthState() {
-  sessionStorage.removeItem(OAUTH_STATE_STORAGE_KEY);
-}
-
-function saveOAuthNonce(nonce) {
-  sessionStorage.setItem(OAUTH_NONCE_STORAGE_KEY, nonce);
-}
-
-function getOAuthNonce() {
-  return sessionStorage.getItem(OAUTH_NONCE_STORAGE_KEY);
-}
-
-function clearOAuthNonce() {
-  sessionStorage.removeItem(OAUTH_NONCE_STORAGE_KEY);
-}
-
-function clearOAuthTransaction() {
-  clearPkceVerifier();
-  clearOAuthState();
-  clearOAuthNonce();
 }
 
 // Build Cognito authorize URL with PKCE, state, and nonce
@@ -185,25 +151,7 @@ export async function exchangeCodeForToken(code) {
 
   const tokens = await response.json();
 
-  clearPkceVerifier();
-
   return tokens;
-}
-
-export function parseJwt(token) {
-  const base64Payload = token.split(".")[1];
-  const normalizedPayload = base64Payload
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-
-  const paddedPayload = normalizedPayload.padEnd(
-    normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
-    "="
-  );
-
-  const decodedPayload = atob(paddedPayload);
-
-  return JSON.parse(decodedPayload);
 }
 
 export function validateIdTokenNonce(idToken) {
@@ -224,17 +172,4 @@ export function validateIdTokenNonce(idToken) {
   clearOAuthNonce();
 
   return payload;
-}
-
-export function saveTokens(tokens) {
-  localStorage.setItem(TOKENS_STORAGE_KEY, JSON.stringify(tokens));
-}
-
-export function getTokens() {
-  const raw = localStorage.getItem(TOKENS_STORAGE_KEY);
-  return raw ? JSON.parse(raw) : null;
-}
-
-export function clearTokens() {
-  localStorage.removeItem(TOKENS_STORAGE_KEY);
 }
