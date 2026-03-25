@@ -16,6 +16,7 @@ function App() {
 
   const [screen, setScreen] = useState(hasAuthCode ? "callback" : "login");
   const [user, setUser] = useState(null);
+  const [matchId, setMatchId] = useState(null);
   const [isLoading, setIsLoading] = useState(hasAuthCode);
   const processed = useRef(false);
 
@@ -56,6 +57,7 @@ function App() {
         console.error("Authentication callback failed:", error);
         clearTokens();
         setUser(null);
+        setMatchId(null);
         setScreen("login");
       } finally {
         setIsLoading(false);
@@ -91,6 +93,7 @@ function App() {
         console.error("Authentication callback failed:", error);
         clearTokens();
         setUser(null);
+        setMatchId(null);
         setScreen("login");
       } finally {
         setIsLoading(false);
@@ -103,8 +106,19 @@ function App() {
   const handleSignOut = () => {
     clearTokens();
     setUser(null);
+    setMatchId(null);
     setScreen("login");
     signOut();
+  };
+
+  const handleMatchFound = (newMatchId) => {
+    setMatchId(newMatchId);
+    setScreen("game");
+  };
+
+  const handleBackToLobby = () => {
+    setMatchId(null);
+    setScreen("lobby");
   };
 
   return (
@@ -115,16 +129,20 @@ function App() {
 
       {!isLoading && screen === "login" && <Login />}
 
-      {screen === "lobby" && (
+      {!isLoading && screen === "lobby" && (
         <Lobby
           user={user}
-          onFindMatch={() => setScreen("game")}
+          onFindMatch={handleMatchFound}
           onBackToHome={handleSignOut}
         />
       )}
 
-      {screen === "game" && (
-        <Game user={user} onBackToLobby={() => setScreen("lobby")} />
+      {!isLoading && screen === "game" && (
+        <Game
+          user={user}
+          matchId={matchId}
+          onBackToLobby={handleBackToLobby}
+        />
       )}
     </main>
   );
