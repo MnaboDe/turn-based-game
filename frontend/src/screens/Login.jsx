@@ -2,12 +2,20 @@ import "./Login.css";
 import { signIn, signUp } from "../api/auth";
 
 function Login() {
-  const handleSignIn = () => {
-    signIn(); // redirect to Cognito
+  const handleSignIn = async () => {
+    try {
+      await signIn();
+    } catch (error) {
+      console.error("Sign in redirect failed", error);
+    }
   };
 
-  const handleSignUp = () => {
-    signUp(); // redirect to Cognito
+  const handleSignUp = async () => {
+    try {
+      await signUp();
+    } catch (error) {
+      console.error("Sign up redirect failed", error);
+    }
   };
 
   return (

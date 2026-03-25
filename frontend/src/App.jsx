@@ -6,6 +6,8 @@ import {
   getTokens,
   clearTokens,
   signOut,
+  validateCallbackState,
+  validateIdTokenNonce,
 } from "./api/auth";
 import Login from "./screens/Login";
 import Lobby from "./screens/Lobby";
@@ -24,15 +26,21 @@ function App() {
     const existingTokens = getTokens();
 
     if (existingTokens) {
-      const userData = parseJwt(existingTokens.id_token);
+      try {
+        const userData = parseJwt(existingTokens.id_token);
 
-      setUser({
-        username: userData.email || userData["cognito:username"],
-        userId: userData.sub,
-      });
+        setUser({
+          username: userData.email || userData["cognito:username"],
+          userId: userData.sub,
+        });
 
-      setScreen("lobby");
-      return;
+        setScreen("lobby");
+        setIsLoading(false);
+        return;
+      } catch (error) {
+        console.error("Failed to restore user from stored token:", error);
+        clearTokens();
+      }
     }
 
     const handleCognitoCallback = async () => {
@@ -42,8 +50,10 @@ function App() {
 
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
+      const state = params.get("state");
 
       if (!code) {
+        setIsLoading(false);
         return;
       }
 
@@ -51,12 +61,14 @@ function App() {
       processed.current = true;
 
       try {
+        validateCallbackState(state);
+
         const tokens = await exchangeCodeForToken(code);
         console.log("Tokens:", tokens);
 
         saveTokens(tokens);
 
-        const userData = parseJwt(tokens.id_token);
+        const userData = validateIdTokenNonce(tokens.id_token);
 
         setUser({
           username: userData.email || userData["cognito:username"],
@@ -66,7 +78,9 @@ function App() {
         setScreen("lobby");
         window.history.replaceState({}, document.title, "/");
       } catch (error) {
-        console.error("Token exchange failed:", error);
+        console.error("Authentication callback failed:", error);
+        clearTokens();
+        setUser(null);
         setScreen("login");
       } finally {
         setIsLoading(false);
