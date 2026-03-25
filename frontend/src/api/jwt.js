@@ -20,3 +20,15 @@ export function buildUserFromTokenPayload(payload) {
     userId: payload.sub,
   };
 }
+
+export function getTokenExpiration(token) {
+  const payload = parseJwt(token);
+  return payload.exp;
+}
+
+export function isTokenExpired(token, clockSkewSeconds = 30) {
+  const exp = getTokenExpiration(token);
+  const now = Math.floor(Date.now() / 1000);
+
+  return exp <= now + clockSkewSeconds;
+}

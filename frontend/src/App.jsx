@@ -20,14 +20,49 @@ function App() {
   const processed = useRef(false);
 
   useEffect(() => {
-    const restoredSession = restoreUserFromStoredTokens();
+    const initializeApp = async () => {
+      const restoredSession = await restoreUserFromStoredTokens();
 
-    if (restoredSession) {
-      setUser(restoredSession.user);
-      setScreen("lobby");
-      setIsLoading(false);
-      return;
-    }
+      if (restoredSession) {
+        setUser(restoredSession.user);
+        setScreen("lobby");
+        setIsLoading(false);
+        return;
+      }
+
+      if (processed.current) {
+        return;
+      }
+
+      if (!hasAuthCodeInUrl()) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      processed.current = true;
+
+      try {
+        const callbackSession = await processCognitoCallback();
+
+        if (!callbackSession) {
+          setScreen("login");
+          return;
+        }
+
+        setUser(callbackSession.user);
+        setScreen("lobby");
+      } catch (error) {
+        console.error("Authentication callback failed:", error);
+        clearTokens();
+        setUser(null);
+        setScreen("login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeApp();
 
     const handleCognitoCallback = async () => {
       if (processed.current) {

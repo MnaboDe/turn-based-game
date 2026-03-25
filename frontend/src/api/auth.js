@@ -149,9 +149,40 @@ export async function exchangeCodeForToken(code) {
     throw new Error("Failed to exchange code for tokens");
   }
 
-  const tokens = await response.json();
+  return response.json();
+}
 
-  return tokens;
+export async function refreshTokens(refreshToken) {
+  if (!refreshToken) {
+    throw new Error("Missing refresh token");
+  }
+
+  const tokenUrl = `${cognitoDomain}/oauth2/token`;
+
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: clientId,
+    refresh_token: refreshToken,
+  });
+
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to refresh tokens");
+  }
+
+  const refreshedTokens = await response.json();
+
+  return {
+    ...refreshedTokens,
+    refresh_token: refreshedTokens.refresh_token || refreshToken,
+  };
 }
 
 export function validateIdTokenNonce(idToken) {
