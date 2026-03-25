@@ -107,13 +107,13 @@ Pass real matchId into Game screen
 Local Development
 
 #### Install dependencies:
-
+```text
 npm install
-
+```
 #### Start the development server
-
+```text
 npm run dev
-
+```
 ## Notes
 
 This is a learning project focused on building a simple AWS-based multiplayer architecture step by step, without overengineering.
