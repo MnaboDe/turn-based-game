@@ -42,3 +42,11 @@ export async function cancelMatchmaking(accessToken) {
 
   return handleResponse(response);
 }
+export async function getCurrentMatch(accessToken) {
+  const response = await fetch(`${authConfig.apiBaseUrl}/matches/current`, {
+    method: "GET",
+    headers: createAuthHeaders(accessToken),
+  });
+
+  return handleResponse(response);
+}

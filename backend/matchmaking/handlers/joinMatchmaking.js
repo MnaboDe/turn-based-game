@@ -56,6 +56,8 @@ export async function handleJoinMatchmaking(user) {
       createdAt,
       player1: opponent.playerId,
       player2: user.playerId,
+      player1Username: opponent.username,
+      player2Username: user.username,
       nowEpochSeconds,
     });
 
