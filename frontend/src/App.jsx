@@ -97,16 +97,12 @@ function App() {
         <Lobby
           user={user}
           onFindMatch={handleMatchFound}
-          onBackToHome={handleSignOut}
+          onSignOut={handleSignOut}
         />
       )}
 
       {!isLoading && screen === "game" && (
-        <Game
-          user={user}
-          matchId={matchId}
-          onBackToLobby={handleBackToLobby}
-        />
+        <Game user={user} matchId={matchId} onBackToLobby={handleBackToLobby} />
       )}
     </main>
   );
