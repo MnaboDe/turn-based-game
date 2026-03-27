@@ -61,6 +61,8 @@ export async function createMatchTransaction({
   createdAt,
   player1,
   player2,
+  player1Username,
+  player2Username,
   nowEpochSeconds,
 }) {
   await dynamoClient.send(
@@ -107,6 +109,8 @@ export async function createMatchTransaction({
               matchId: { S: matchId },
               player1: { S: player1 },
               player2: { S: player2 },
+              player1Username: { S: player1Username },
+              player2Username: { S: player2Username },
               createdAt: { S: createdAt },
               lastUpdatedAt: { S: createdAt },
               state: { S: "active" },
@@ -171,4 +175,26 @@ export function isTransactionCanceled(error) {
     error?.name === "TransactionCanceledException" ||
     error?.name === "TransactionConflictException"
   );
+}
+export function buildMatchView(match, currentPlayerId) {
+  if (!match) {
+    return null;
+  }
+
+  const isPlayer1 = match.player1 === currentPlayerId;
+  const opponentId = isPlayer1 ? match.player2 : match.player1;
+  const opponentUsername = isPlayer1
+    ? match.player2Username
+    : match.player1Username;
+
+  return {
+    matchId: match.matchId,
+    state: match.state,
+    opponentId,
+    opponentUsername,
+    turn: match.turn,
+    movesCount: match.movesCount ?? 0,
+    isYourTurn: match.turn === currentPlayerId,
+    nextMoveNumber: (match.movesCount ?? 0) + 1,
+  };
 }
