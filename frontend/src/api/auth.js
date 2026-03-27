@@ -11,12 +11,12 @@ import {
   clearOAuthNonce,
   clearOAuthTransaction,
   clearTokens,
+  getTokens,
 } from "./authStorage";
 
 const { cognitoDomain, clientId, redirectUri } = authConfig;
 const OAUTH_SCOPE = "openid email";
 
-// Generate a cryptographically random string
 function generateRandomString(length = 64) {
   const charset =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
@@ -33,7 +33,6 @@ function generateRandomString(length = 64) {
   return result;
 }
 
-// Convert ArrayBuffer to base64url
 function base64UrlEncode(buffer) {
   const bytes = new Uint8Array(buffer);
   let binary = "";
@@ -48,7 +47,6 @@ function base64UrlEncode(buffer) {
     .replace(/=+$/g, "");
 }
 
-// Create SHA-256 code challenge from verifier
 async function generateCodeChallenge(codeVerifier) {
   const encoder = new TextEncoder();
   const data = encoder.encode(codeVerifier);
@@ -57,7 +55,6 @@ async function generateCodeChallenge(codeVerifier) {
   return base64UrlEncode(digest);
 }
 
-// Build Cognito authorize URL with PKCE, state, and nonce
 async function buildAuthorizeUrl(mode = "login") {
   const codeVerifier = generateRandomString(64);
   const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -96,16 +93,61 @@ export async function signUp() {
   window.location.assign(signUpUrl);
 }
 
-export function signOut() {
+export function signOutLocal() {
   clearOAuthTransaction();
   clearTokens();
+}
 
-  const logoutUrl =
-    `${cognitoDomain}/logout` +
-    `?client_id=${encodeURIComponent(clientId)}` +
-    `&logout_uri=${encodeURIComponent(redirectUri)}`;
+export function buildHostedLogoutUrl() {
+  const logoutUrl = new URL(`${cognitoDomain}/logout`);
+  logoutUrl.searchParams.set("client_id", clientId);
+  logoutUrl.searchParams.set("logout_uri", redirectUri);
+  return logoutUrl.toString();
+}
 
-  window.location.assign(logoutUrl);
+export async function revokeRefreshToken(refreshToken) {
+  if (!refreshToken) {
+    return;
+  }
+
+  const revokeUrl = `${cognitoDomain}/oauth2/revoke`;
+
+  const body = new URLSearchParams({
+    token: refreshToken,
+    client_id: clientId,
+  });
+
+  const response = await fetch(revokeUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to revoke refresh token");
+  }
+}
+
+export async function signOutHosted() {
+  window.location.assign(buildHostedLogoutUrl());
+}
+
+export async function signOutEverywhere() {
+  const existingTokens = getTokens();
+  const refreshToken = existingTokens?.refresh_token;
+
+  try {
+    if (refreshToken) {
+      await revokeRefreshToken(refreshToken);
+    }
+  } catch (error) {
+    console.error("Refresh token revocation failed:", error);
+  } finally {
+    signOutLocal();
+    await signOutHosted();
+  }
 }
 
 export function validateCallbackState(callbackState) {
@@ -174,7 +216,20 @@ export async function refreshTokens(refreshToken) {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to refresh tokens");
+    let errorDetails = null;
+
+    try {
+      errorDetails = await response.json();
+    } catch {
+      errorDetails = null;
+    }
+
+    const message =
+      errorDetails?.error_description ||
+      errorDetails?.error ||
+      "Failed to refresh tokens";
+
+    throw new Error(message);
   }
 
   const refreshedTokens = await response.json();

@@ -52,7 +52,7 @@ export async function restoreUserFromStoredTokens() {
       tokens: refreshedTokens,
     };
   } catch (error) {
-    console.error("Failed to restore or refresh auth session:", error);
+    console.error("Failed to restore or refresh auth session:", error.message || error);
     clearTokens();
     return null;
   }

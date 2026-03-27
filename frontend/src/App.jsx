@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { signOut } from "./api/auth";
+import { signOutEverywhere } from "./api/auth";
 import { clearTokens } from "./api/authStorage";
 import { getMatchmakingStatus } from "./api/matchmaking";
 import {
@@ -95,7 +95,10 @@ function App() {
             return;
           }
         } catch (error) {
-          console.error("Failed to restore active match after callback:", error);
+          console.error(
+            "Failed to restore active match after callback:",
+            error,
+          );
         }
 
         setScreen("lobby");
@@ -113,12 +116,16 @@ function App() {
     initializeApp();
   }, []);
 
-  const handleSignOut = () => {
-    clearTokens();
+  const handleSignOut = async () => {
     setUser(null);
     setMatchId(null);
     setScreen("login");
-    signOut();
+
+    try {
+      await signOutEverywhere();
+    } catch (error) {
+      console.error("Sign out failed:", error);
+    }
   };
 
   const handleMatchFound = (newMatchId) => {
@@ -148,11 +155,7 @@ function App() {
       )}
 
       {!isLoading && screen === "game" && (
-        <Game
-          user={user}
-          matchId={matchId}
-          onBackToLobby={handleBackToLobby}
-        />
+        <Game user={user} matchId={matchId} onBackToLobby={handleBackToLobby} />
       )}
     </main>
   );
