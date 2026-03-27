@@ -35,6 +35,10 @@ export const handler = async (event) => {
       return await handleStatus(user);
     }
 
+    if (method === "POST" && path === "/matchmaking/cancel") {
+      return await handleCancel(user);
+    }
+
     return jsonResponse(404, { message: "Not found" });
   } catch (error) {
     console.error("Handler error:", error);
@@ -71,7 +75,7 @@ async function handleJoin(user) {
       Key: {
         playerId: user.playerId,
       },
-    })
+    }),
   );
 
   if (existingQueueItem.Item) {
@@ -91,11 +95,11 @@ async function handleJoin(user) {
         ":waiting": "waiting",
       },
       Limit: 10,
-    })
+    }),
   );
 
   const opponent = (waitingPlayersResult.Items || []).find(
-    (item) => item.playerId !== user.playerId
+    (item) => item.playerId !== user.playerId,
   );
 
   if (!opponent) {
@@ -109,7 +113,7 @@ async function handleJoin(user) {
           joinedAt: new Date().toISOString(),
           username: user.username,
         },
-      })
+      }),
     );
 
     return jsonResponse(200, { status: "waiting" });
@@ -130,7 +134,7 @@ async function handleJoin(user) {
         turn: opponent.playerId,
         winner: null,
       },
-    })
+    }),
   );
 
   // Remove both players from the waiting queue
@@ -140,7 +144,7 @@ async function handleJoin(user) {
       Key: {
         playerId: opponent.playerId,
       },
-    })
+    }),
   );
 
   await docClient.send(
@@ -149,12 +153,27 @@ async function handleJoin(user) {
       Key: {
         playerId: user.playerId,
       },
-    })
+    }),
   );
 
   return jsonResponse(200, {
     status: "matched",
     matchId,
+  });
+}
+
+async function handleCancel(user) {
+  await docClient.send(
+    new DeleteCommand({
+      TableName: WAITING_QUEUE_TABLE,
+      Key: {
+        playerId: user.playerId,
+      },
+    }),
+  );
+
+  return jsonResponse(200, {
+    status: "cancelled",
   });
 }
 
@@ -181,7 +200,7 @@ async function findMatchByPlayer(playerId) {
         ":playerId": playerId,
       },
       Limit: 1,
-    })
+    }),
   );
 
   if (player1Result.Items && player1Result.Items.length > 0) {
@@ -197,7 +216,7 @@ async function findMatchByPlayer(playerId) {
         ":playerId": playerId,
       },
       Limit: 1,
-    })
+    }),
   );
 
   if (player2Result.Items && player2Result.Items.length > 0) {

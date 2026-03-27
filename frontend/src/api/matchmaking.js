@@ -33,3 +33,12 @@ export async function getMatchmakingStatus(accessToken) {
 
   return handleResponse(response);
 }
+
+export async function cancelMatchmaking(accessToken) {
+  const response = await fetch(`${authConfig.apiBaseUrl}/matchmaking/cancel`, {
+    method: "POST",
+    headers: createAuthHeaders(accessToken),
+  });
+
+  return handleResponse(response);
+}

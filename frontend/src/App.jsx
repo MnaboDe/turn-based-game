@@ -65,42 +65,6 @@ function App() {
     };
 
     initializeApp();
-
-    const handleCognitoCallback = async () => {
-      if (processed.current) {
-        return;
-      }
-
-      if (!hasAuthCodeInUrl()) {
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      processed.current = true;
-
-      try {
-        const callbackSession = await processCognitoCallback();
-
-        if (!callbackSession) {
-          setScreen("login");
-          return;
-        }
-
-        setUser(callbackSession.user);
-        setScreen("lobby");
-      } catch (error) {
-        console.error("Authentication callback failed:", error);
-        clearTokens();
-        setUser(null);
-        setMatchId(null);
-        setScreen("login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    handleCognitoCallback();
   }, []);
 
   const handleSignOut = () => {
