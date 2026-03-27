@@ -1,7 +1,9 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  TransactWriteItemsCommand,
+} from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
-  GetCommand,
   PutCommand,
   DeleteCommand,
   QueryCommand,
@@ -13,6 +15,7 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const WAITING_QUEUE_TABLE = process.env.WAITING_QUEUE_TABLE;
 const MATCHES_TABLE = process.env.MATCHES_TABLE;
+const QUEUE_TTL_SECONDS = 120;
 
 export const handler = async (event) => {
   console.log("Incoming event:", JSON.stringify(event, null, 2));
@@ -58,9 +61,17 @@ function getUserFromEvent(event) {
   };
 }
 
+function getCurrentEpochSeconds() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function getQueueExpiryEpochSeconds() {
+  return getCurrentEpochSeconds() + QUEUE_TTL_SECONDS;
+}
+
 async function handleJoin(user) {
-  // Check whether the player already has an active match
-  const existingMatch = await findMatchByPlayer(user.playerId);
+  const existingMatch = await findActiveMatchByPlayer(user.playerId);
+
   if (existingMatch) {
     return jsonResponse(200, {
       status: "matched",
@@ -68,21 +79,14 @@ async function handleJoin(user) {
     });
   }
 
-  // Check whether the player is already waiting in the queue
-  const existingQueueItem = await docClient.send(
-    new GetCommand({
-      TableName: WAITING_QUEUE_TABLE,
-      Key: {
-        playerId: user.playerId,
-      },
-    }),
-  );
-
-  if (existingQueueItem.Item) {
-    return jsonResponse(200, { status: "waiting" });
+  try {
+    await putPlayerIntoQueueIfAbsent(user);
+  } catch (error) {
+    if (error.name !== "ConditionalCheckFailedException") {
+      throw error;
+    }
   }
 
-  // Query waiting players from the queue
   const waitingPlayersResult = await docClient.send(
     new QueryCommand({
       TableName: WAITING_QUEUE_TABLE,
@@ -98,68 +102,56 @@ async function handleJoin(user) {
     }),
   );
 
+  const nowEpochSeconds = getCurrentEpochSeconds();
+
   const opponent = (waitingPlayersResult.Items || []).find(
-    (item) => item.playerId !== user.playerId,
+    (item) =>
+      item.playerId !== user.playerId &&
+      typeof item.expiresAt === "number" &&
+      item.expiresAt > nowEpochSeconds,
   );
 
   if (!opponent) {
-    // Put the current player into the waiting queue
-    await docClient.send(
-      new PutCommand({
-        TableName: WAITING_QUEUE_TABLE,
-        Item: {
-          playerId: user.playerId,
-          status: "waiting",
-          joinedAt: new Date().toISOString(),
-          username: user.username,
-        },
-      }),
-    );
+    return jsonResponse(200, { status: "waiting" });
+  }
 
+  const userLatestMatch = await findActiveMatchByPlayer(user.playerId);
+  if (userLatestMatch) {
+    return jsonResponse(200, {
+      status: "matched",
+      matchId: userLatestMatch.matchId,
+    });
+  }
+
+  const opponentLatestMatch = await findActiveMatchByPlayer(opponent.playerId);
+  if (opponentLatestMatch) {
     return jsonResponse(200, { status: "waiting" });
   }
 
   const matchId = `match-${crypto.randomUUID()}`;
+  const createdAt = new Date().toISOString();
 
-  // Create a new match
-  await docClient.send(
-    new PutCommand({
-      TableName: MATCHES_TABLE,
-      Item: {
-        matchId,
-        player1: opponent.playerId,
-        player2: user.playerId,
-        createdAt: new Date().toISOString(),
-        state: "active",
-        turn: opponent.playerId,
-        winner: null,
-      },
-    }),
-  );
+  try {
+    await createMatchTransaction({
+      matchId,
+      createdAt,
+      player1: opponent.playerId,
+      player2: user.playerId,
+      nowEpochSeconds,
+    });
 
-  // Remove both players from the waiting queue
-  await docClient.send(
-    new DeleteCommand({
-      TableName: WAITING_QUEUE_TABLE,
-      Key: {
-        playerId: opponent.playerId,
-      },
-    }),
-  );
+    return jsonResponse(200, {
+      status: "matched",
+      matchId,
+    });
+  } catch (error) {
+    if (isTransactionCanceled(error)) {
+      console.warn("Match transaction cancelled:", error);
+      return jsonResponse(200, { status: "waiting" });
+    }
 
-  await docClient.send(
-    new DeleteCommand({
-      TableName: WAITING_QUEUE_TABLE,
-      Key: {
-        playerId: user.playerId,
-      },
-    }),
-  );
-
-  return jsonResponse(200, {
-    status: "matched",
-    matchId,
-  });
+    throw error;
+  }
 }
 
 async function handleCancel(user) {
@@ -178,19 +170,99 @@ async function handleCancel(user) {
 }
 
 async function handleStatus(user) {
-  const match = await findMatchByPlayer(user.playerId);
+  const match = await findActiveMatchByPlayer(user.playerId);
 
-  if (!match) {
-    return jsonResponse(200, { status: "waiting" });
+  if (match) {
+    return jsonResponse(200, {
+      status: "matched",
+      matchId: match.matchId,
+    });
   }
 
-  return jsonResponse(200, {
-    status: "matched",
-    matchId: match.matchId,
-  });
+  return jsonResponse(200, { status: "waiting" });
 }
 
-async function findMatchByPlayer(playerId) {
+async function putPlayerIntoQueueIfAbsent(user) {
+  await docClient.send(
+    new PutCommand({
+      TableName: WAITING_QUEUE_TABLE,
+      Item: {
+        playerId: user.playerId,
+        status: "waiting",
+        joinedAt: new Date().toISOString(),
+        username: user.username,
+        expiresAt: getQueueExpiryEpochSeconds(),
+      },
+      ConditionExpression: "attribute_not_exists(playerId)",
+    }),
+  );
+}
+
+async function createMatchTransaction({
+  matchId,
+  createdAt,
+  player1,
+  player2,
+  nowEpochSeconds,
+}) {
+  await dynamoClient.send(
+    new TransactWriteItemsCommand({
+      TransactItems: [
+        {
+          Delete: {
+            TableName: WAITING_QUEUE_TABLE,
+            Key: {
+              playerId: { S: player1 },
+            },
+            ConditionExpression:
+              "attribute_exists(playerId) AND #status = :waiting AND expiresAt > :now",
+            ExpressionAttributeNames: {
+              "#status": "status",
+            },
+            ExpressionAttributeValues: {
+              ":waiting": { S: "waiting" },
+              ":now": { N: String(nowEpochSeconds) },
+            },
+          },
+        },
+        {
+          Delete: {
+            TableName: WAITING_QUEUE_TABLE,
+            Key: {
+              playerId: { S: player2 },
+            },
+            ConditionExpression:
+              "attribute_exists(playerId) AND #status = :waiting AND expiresAt > :now",
+            ExpressionAttributeNames: {
+              "#status": "status",
+            },
+            ExpressionAttributeValues: {
+              ":waiting": { S: "waiting" },
+              ":now": { N: String(nowEpochSeconds) },
+            },
+          },
+        },
+        {
+          Put: {
+            TableName: MATCHES_TABLE,
+            Item: {
+              matchId: { S: matchId },
+              player1: { S: player1 },
+              player2: { S: player2 },
+              createdAt: { S: createdAt },
+              state: { S: "active" },
+              turn: { S: player1 },
+              winner: { NULL: true },
+            },
+            ConditionExpression: "attribute_not_exists(matchId)",
+          },
+        },
+      ],
+    }),
+  );
+}
+
+async function findActiveMatchByPlayer(playerId) {
   const player1Result = await docClient.send(
     new QueryCommand({
       TableName: MATCHES_TABLE,
@@ -199,12 +271,16 @@ async function findMatchByPlayer(playerId) {
       ExpressionAttributeValues: {
         ":playerId": playerId,
       },
-      Limit: 1,
+      Limit: 10,
     }),
   );
 
-  if (player1Result.Items && player1Result.Items.length > 0) {
-    return player1Result.Items[0];
+  const activePlayer1Match = (player1Result.Items || []).find(
+    (item) => item.state === "active",
+  );
+
+  if (activePlayer1Match) {
+    return activePlayer1Match;
   }
 
   const player2Result = await docClient.send(
@@ -215,15 +291,26 @@ async function findMatchByPlayer(playerId) {
       ExpressionAttributeValues: {
         ":playerId": playerId,
       },
-      Limit: 1,
+      Limit: 10,
     }),
   );
 
-  if (player2Result.Items && player2Result.Items.length > 0) {
-    return player2Result.Items[0];
+  const activePlayer2Match = (player2Result.Items || []).find(
+    (item) => item.state === "active",
+  );
+
+  if (activePlayer2Match) {
+    return activePlayer2Match;
   }
 
   return null;
+}
+
+function isTransactionCanceled(error) {
+  return (
+    error?.name === "TransactionCanceledException" ||
+    error?.name === "TransactionConflictException"
+  );
 }
 
 function jsonResponse(statusCode, body) {
