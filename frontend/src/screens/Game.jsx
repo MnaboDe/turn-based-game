@@ -1,38 +1,65 @@
 import { useEffect, useState } from "react";
 import { getTokens } from "../api/authStorage";
-import { getCurrentMatch } from "../api/matchmaking";
+import { getCurrentMatch, makeMove } from "../api/matchmaking";
 import "./Game.css";
 
 function Game({ user, matchId, onBackToLobby }) {
   const [matchInfo, setMatchInfo] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmittingMove, setIsSubmittingMove] = useState(false);
+
+  async function loadMatch() {
+    try {
+      setError("");
+
+      const tokens = getTokens();
+      const accessToken = tokens?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Missing access token");
+      }
+
+      const result = await getCurrentMatch(accessToken);
+      setMatchInfo(result);
+    } catch (loadError) {
+      console.error("Failed to load current match:", loadError);
+      setError("Failed to load match information.");
+    }
+  }
 
   useEffect(() => {
-    const loadMatch = async () => {
-      try {
-        setError("");
-        setIsLoading(true);
-
-        const tokens = getTokens();
-        const accessToken = tokens?.access_token;
-
-        if (!accessToken) {
-          throw new Error("Missing access token");
-        }
-
-        const result = await getCurrentMatch(accessToken);
-        setMatchInfo(result);
-      } catch (loadError) {
-        console.error("Failed to load current match:", loadError);
-        setError("Failed to load match information.");
-      } finally {
-        setIsLoading(false);
-      }
+    const initialize = async () => {
+      setIsLoading(true);
+      await loadMatch();
+      setIsLoading(false);
     };
 
-    loadMatch();
+    initialize();
   }, []);
+
+  async function handleMakeMove() {
+    try {
+      setError("");
+      setIsSubmittingMove(true);
+
+      const tokens = getTokens();
+      const accessToken = tokens?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Missing access token");
+      }
+
+      const updatedMatch = await makeMove(accessToken);
+      setMatchInfo(updatedMatch);
+    } catch (moveError) {
+      console.error("Failed to make move:", moveError);
+      setError(moveError.message || "Failed to make move.");
+      await loadMatch();
+    } finally {
+      setIsSubmittingMove(false);
+    }
+  }
 
   const isYourTurn = matchInfo?.isYourTurn ?? false;
   const opponentName = matchInfo?.opponentUsername || "Unknown opponent";
@@ -50,13 +77,19 @@ function Game({ user, matchId, onBackToLobby }) {
 
       {!isLoading && error && <p>{error}</p>}
 
-      {!isLoading && !error && matchInfo && (
+      {!isLoading && matchInfo && (
         <>
           <p>Opponent: {opponentName}</p>
           <p>{turnLabel}</p>
           <p>Move number: {nextMoveNumber}</p>
 
-          <button disabled={!isYourTurn}>Make Move</button>
+          <button onClick={handleMakeMove} disabled={!isYourTurn || isSubmittingMove}>
+            {isSubmittingMove ? "Making move..." : "Make Move"}
+          </button>
+
+          <button onClick={loadMatch} disabled={isSubmittingMove}>
+            Refresh
+          </button>
 
           <p>Game screen is under construction.</p>
         </>

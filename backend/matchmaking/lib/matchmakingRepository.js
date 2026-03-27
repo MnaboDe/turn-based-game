@@ -1,5 +1,5 @@
 import { TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import {
   dynamoClient,
   docClient,
@@ -176,6 +176,7 @@ export function isTransactionCanceled(error) {
     error?.name === "TransactionConflictException"
   );
 }
+
 export function buildMatchView(match, currentPlayerId) {
   if (!match) {
     return null;
@@ -193,8 +194,41 @@ export function buildMatchView(match, currentPlayerId) {
     opponentId,
     opponentUsername,
     turn: match.turn,
-    movesCount: match.movesCount ?? 0,
+    movesCount: Number(match.movesCount ?? 0),
     isYourTurn: match.turn === currentPlayerId,
-    nextMoveNumber: (match.movesCount ?? 0) + 1,
+    nextMoveNumber: Number(match.movesCount ?? 0) + 1,
   };
+}
+
+export async function makeMove(match, currentPlayerId) {
+  const nextTurnPlayerId =
+    match.player1 === currentPlayerId ? match.player2 : match.player1;
+
+  const nowIsoString = new Date().toISOString();
+
+  const result = await docClient.send(
+    new UpdateCommand({
+      TableName: MATCHES_TABLE,
+      Key: {
+        matchId: match.matchId,
+      },
+      UpdateExpression:
+        "SET #turn = :nextTurn, lastUpdatedAt = :lastUpdatedAt, movesCount = movesCount + :increment",
+      ConditionExpression: "#state = :active AND #turn = :currentPlayerId",
+      ExpressionAttributeNames: {
+        "#turn": "turn",
+        "#state": "state",
+      },
+      ExpressionAttributeValues: {
+        ":nextTurn": nextTurnPlayerId,
+        ":lastUpdatedAt": nowIsoString,
+        ":increment": 1,
+        ":active": "active",
+        ":currentPlayerId": currentPlayerId,
+      },
+      ReturnValues: "ALL_NEW",
+    }),
+  );
+
+  return result.Attributes;
 }
