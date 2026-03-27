@@ -6,7 +6,8 @@ import {
   cancelMatchmaking,
 } from "../api/matchmaking";
 
-function Lobby({ user, onFindMatch, onBackToHome }) {
+function Lobby({ user, onFindMatch, onSignOut }) {
+  const [isJoining, setIsJoining] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState("");
   const pollingRef = useRef(null);
@@ -19,9 +20,12 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
   }
 
   async function handleFindMatch() {
-    if (isSearching) {
+    if (isJoining || isSearching) {
       return;
     }
+
+    setIsJoining(true);
+
     try {
       setError("");
 
@@ -40,7 +44,6 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
       }
 
       setIsSearching(true);
-
       stopPolling();
 
       pollingRef.current = setInterval(async () => {
@@ -63,13 +66,16 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
       console.error("Join matchmaking failed:", joinError);
       setIsSearching(false);
       setError("Failed to start matchmaking.");
+    } finally {
+      setIsJoining(false);
     }
   }
 
   async function handleCancelSearch() {
-    if (!isSearching) {
+    if (!isJoining && !isSearching) {
       return;
     }
+
     try {
       setError("");
 
@@ -84,9 +90,36 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
 
       stopPolling();
       setIsSearching(false);
+      setIsJoining(false);
     } catch (cancelError) {
       console.error("Cancel matchmaking failed:", cancelError);
       setError("Failed to cancel matchmaking.");
+    }
+  }
+
+  async function handleSignOutClick() {
+    try {
+      setError("");
+
+      if (isJoining || isSearching) {
+        const tokens = getTokens();
+        const accessToken = tokens?.access_token;
+
+        if (accessToken) {
+          await cancelMatchmaking(accessToken);
+        }
+
+        stopPolling();
+        setIsSearching(false);
+        setIsJoining(false);
+      }
+    } catch (signOutError) {
+      console.error(
+        "Failed to cancel matchmaking before sign out:",
+        signOutError,
+      );
+    } finally {
+      onSignOut();
     }
   }
 
@@ -103,16 +136,18 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
 
       {error && <p>{error}</p>}
 
-      {!isSearching && <button onClick={handleFindMatch}>Find Match</button>}
+      {!isJoining && !isSearching && (
+        <button onClick={handleFindMatch}>Find Match</button>
+      )}
 
-      {isSearching && (
+      {(isJoining || isSearching) && (
         <>
           <p>Searching for a match...</p>
           <button onClick={handleCancelSearch}>Cancel Search</button>
         </>
       )}
 
-      <button onClick={onBackToHome}>Sign Out</button>
+      <button onClick={handleSignOutClick}>Sign Out</button>
     </div>
   );
 }
