@@ -36,7 +36,7 @@ function Lobby({ user, onFindMatch, onSignOut }) {
         throw new Error("Missing access token");
       }
 
-      const joinResult = await joinMatchmaking(accessToken);
+      const joinResult = await joinMatchmaking(accessToken, user?.username);
 
       if (joinResult.status === "matched" && joinResult.matchId) {
         onFindMatch(joinResult.matchId);

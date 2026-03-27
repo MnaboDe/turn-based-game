@@ -1,6 +1,11 @@
 import { authConfig } from "../config/authConfig";
 import { parseJwt } from "./jwt";
 import {
+  CognitoIdentityProviderClient,
+  GetUserCommand,
+  UpdateUserAttributesCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+import {
   savePkceVerifier,
   getPkceVerifier,
   saveOAuthState,
@@ -14,8 +19,10 @@ import {
   getTokens,
 } from "./authStorage";
 
-const { cognitoDomain, clientId, redirectUri } = authConfig;
-const OAUTH_SCOPE = "openid email";
+const { region, cognitoDomain, clientId, redirectUri } = authConfig;
+const OAUTH_SCOPE = "openid email aws.cognito.signin.user.admin";
+
+const cognitoIdpClient = new CognitoIdentityProviderClient({ region });
 
 function generateRandomString(length = 64) {
   const charset =
@@ -258,4 +265,42 @@ export function validateIdTokenNonce(idToken) {
   clearOAuthNonce();
 
   return payload;
+}
+export async function getCurrentUserProfile(accessToken) {
+  const response = await cognitoIdpClient.send(
+    new GetUserCommand({
+      AccessToken: accessToken,
+    }),
+  );
+
+  const attributes = Object.fromEntries(
+    (response.UserAttributes || []).map((attribute) => [
+      attribute.Name,
+      attribute.Value,
+    ]),
+  );
+
+  return {
+    username: response.Username,
+    attributes,
+  };
+}
+
+export async function updateDisplayName(accessToken, displayName) {
+  await cognitoIdpClient.send(
+    new UpdateUserAttributesCommand({
+      AccessToken: accessToken,
+      UserAttributes: [
+        {
+          Name: "custom:displayName",
+          Value: displayName,
+        },
+      ],
+    }),
+  );
+}
+
+export function getStoredAccessToken() {
+  const tokens = getTokens();
+  return tokens?.access_token || null;
 }
