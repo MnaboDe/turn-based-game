@@ -4,6 +4,7 @@ import { handleJoinMatchmaking } from "./handlers/joinMatchmaking.js";
 import { handleGetMatchStatus } from "./handlers/getMatchStatus.js";
 import { handleCancelMatchmaking } from "./handlers/cancelMatchmaking.js";
 import { handleGetCurrentMatch } from "./handlers/getCurrentMatch.js";
+import { handleMakeMove } from "./handlers/makeMove.js";
 
 export const handler = async (event) => {
   console.log("Incoming event:", JSON.stringify(event, null, 2));
@@ -32,6 +33,9 @@ export const handler = async (event) => {
 
     if (method === "GET" && path === "/matches/current") {
       return await handleGetCurrentMatch(user);
+    }
+    if (method === "POST" && path === "/matches/move") {
+      return await handleMakeMove(user);
     }
 
     return jsonResponse(404, { message: "Not found" });

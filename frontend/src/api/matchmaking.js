@@ -61,3 +61,14 @@ export async function getCurrentMatch(accessToken) {
 
   return handleResponse(response);
 }
+
+export async function makeMove(accessToken) {
+  const response = await fetch(`${authConfig.apiBaseUrl}/matches/move`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return handleResponse(response);
+}
