@@ -4,8 +4,20 @@ export function getUserFromEvent(event) {
     event.requestContext?.authorizer?.claims ||
     {};
 
+  let body = {};
+
+  try {
+    body = event.body ? JSON.parse(event.body) : {};
+  } catch {
+    body = {};
+  }
+
   return {
     playerId: claims.sub,
-    username: claims.email || claims["cognito:username"] || "unknown",
+    username:
+      body.displayName ||
+      claims.email ||
+      claims["cognito:username"] ||
+      "unknown",
   };
 }

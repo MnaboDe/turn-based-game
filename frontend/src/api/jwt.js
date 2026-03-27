@@ -16,7 +16,10 @@ export function parseJwt(token) {
 
 export function buildUserFromTokenPayload(payload) {
   return {
-    username: payload.email || payload["cognito:username"],
+    username:
+      payload["custom:displayName"] ||
+      payload.email ||
+      payload["cognito:username"],
     userId: payload.sub,
   };
 }

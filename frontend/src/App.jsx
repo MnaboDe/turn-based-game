@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { signOutEverywhere } from "./api/auth";
+import { signOutEverywhere, getCurrentUserProfile } from "./api/auth";
 import { clearTokens } from "./api/authStorage";
 import { getMatchmakingStatus } from "./api/matchmaking";
 import {
@@ -11,6 +11,7 @@ import Login from "./screens/Login";
 import Lobby from "./screens/Lobby";
 import Game from "./screens/Game";
 import Loading from "./screens/Loading";
+import CompleteProfile from "./screens/CompleteProfile";
 
 function App() {
   const hasAuthCode = hasAuthCodeInUrl();
@@ -36,6 +37,20 @@ function App() {
       return null;
     };
 
+    const ensureDisplayName = async (accessToken) => {
+      if (!accessToken) {
+        return { hasDisplayName: false, displayName: null };
+      }
+
+      const profile = await getCurrentUserProfile(accessToken);
+      const displayName = profile.attributes["custom:displayName"] || null;
+
+      return {
+        hasDisplayName: Boolean(displayName),
+        displayName,
+      };
+    };
+
     const initializeApp = async () => {
       const restoredSession = await restoreUserFromStoredTokens();
 
@@ -43,6 +58,21 @@ function App() {
         setUser(restoredSession.user);
 
         try {
+          const profileState = await ensureDisplayName(
+            restoredSession.tokens?.access_token,
+          );
+
+          if (!profileState.hasDisplayName) {
+            setScreen("complete-profile");
+            setIsLoading(false);
+            return;
+          }
+
+          setUser((currentUser) => ({
+            ...currentUser,
+            username: profileState.displayName,
+          }));
+
           const restoredMatchId = await restoreActiveMatch(
             restoredSession.tokens?.access_token,
           );
@@ -54,7 +84,7 @@ function App() {
             return;
           }
         } catch (error) {
-          console.error("Failed to restore active match:", error);
+          console.error("Failed to restore user profile or active match:", error);
         }
 
         setScreen("lobby");
@@ -85,6 +115,20 @@ function App() {
         setUser(callbackSession.user);
 
         try {
+          const profileState = await ensureDisplayName(
+            callbackSession.tokens?.access_token,
+          );
+
+          if (!profileState.hasDisplayName) {
+            setScreen("complete-profile");
+            return;
+          }
+
+          setUser((currentUser) => ({
+            ...currentUser,
+            username: profileState.displayName,
+          }));
+
           const restoredMatchId = await restoreActiveMatch(
             callbackSession.tokens?.access_token,
           );
@@ -96,7 +140,7 @@ function App() {
           }
         } catch (error) {
           console.error(
-            "Failed to restore active match after callback:",
+            "Failed to restore user profile or active match after callback:",
             error,
           );
         }
@@ -138,6 +182,14 @@ function App() {
     setScreen("lobby");
   };
 
+  const handleProfileCompleted = (displayName) => {
+    setUser((currentUser) => ({
+      ...currentUser,
+      username: displayName,
+    }));
+    setScreen("lobby");
+  };
+
   return (
     <main>
       <h1>Turn-Based Game</h1>
@@ -145,6 +197,10 @@ function App() {
       {isLoading && <Loading />}
 
       {!isLoading && screen === "login" && <Login />}
+
+      {!isLoading && screen === "complete-profile" && (
+        <CompleteProfile onComplete={handleProfileCompleted} />
+      )}
 
       {!isLoading && screen === "lobby" && (
         <Lobby
@@ -155,7 +211,11 @@ function App() {
       )}
 
       {!isLoading && screen === "game" && (
-        <Game user={user} matchId={matchId} onBackToLobby={handleBackToLobby} />
+        <Game
+          user={user}
+          matchId={matchId}
+          onBackToLobby={handleBackToLobby}
+        />
       )}
     </main>
   );
