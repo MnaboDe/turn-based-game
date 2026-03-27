@@ -1,52 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { joinMatchmaking, getMatchmakingStatus } from "../api/matchmaking";
 import { getTokens } from "../api/authStorage";
-import "./Lobby.css";
+import {
+  joinMatchmaking,
+  getMatchmakingStatus,
+  cancelMatchmaking,
+} from "../api/matchmaking";
 
 function Lobby({ user, onFindMatch, onBackToHome }) {
-  const [searching, setSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState("");
   const pollingRef = useRef(null);
 
-  useEffect(() => {
-    return () => {
-      stopPolling();
-    };
-  }, []);
-
-  const stopPolling = () => {
+  function stopPolling() {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
-  };
+  }
 
-  const startPolling = (accessToken) => {
-    stopPolling();
-
-    pollingRef.current = setInterval(async () => {
-      try {
-        const result = await getMatchmakingStatus(accessToken);
-
-        if (result.status === "matched" && result.matchId) {
-          stopPolling();
-          setSearching(false);
-          onFindMatch(result.matchId);
-        }
-      } catch (pollingError) {
-        console.error("Matchmaking polling failed:", pollingError);
-        stopPolling();
-        setSearching(false);
-        setError("Failed to check matchmaking status.");
-      }
-    }, 3000);
-  };
-
-  const handleFindMatch = async () => {
-    setError("");
-    setSearching(true);
-
+  async function handleFindMatch() {
+    if (isSearching) {
+      return;
+    }
     try {
+      setError("");
+
       const tokens = getTokens();
       const accessToken = tokens?.access_token;
 
@@ -54,41 +32,87 @@ function Lobby({ user, onFindMatch, onBackToHome }) {
         throw new Error("Missing access token");
       }
 
-      const result = await joinMatchmaking(accessToken);
+      const joinResult = await joinMatchmaking(accessToken);
 
-      if (result.status === "matched" && result.matchId) {
-        setSearching(false);
-        onFindMatch(result.matchId);
+      if (joinResult.status === "matched" && joinResult.matchId) {
+        onFindMatch(joinResult.matchId);
         return;
       }
 
-      if (result.status === "waiting") {
-        startPolling(accessToken);
-        return;
-      }
+      setIsSearching(true);
 
-      throw new Error("Unexpected matchmaking response");
+      stopPolling();
+
+      pollingRef.current = setInterval(async () => {
+        try {
+          const statusResult = await getMatchmakingStatus(accessToken);
+
+          if (statusResult.status === "matched" && statusResult.matchId) {
+            stopPolling();
+            setIsSearching(false);
+            onFindMatch(statusResult.matchId);
+          }
+        } catch (pollError) {
+          console.error("Matchmaking polling failed:", pollError);
+          stopPolling();
+          setIsSearching(false);
+          setError("Failed to check matchmaking status.");
+        }
+      }, 2000);
     } catch (joinError) {
-      console.error("Matchmaking failed:", joinError);
-      setSearching(false);
+      console.error("Join matchmaking failed:", joinError);
+      setIsSearching(false);
       setError("Failed to start matchmaking.");
     }
-  };
+  }
+
+  async function handleCancelSearch() {
+    if (!isSearching) {
+      return;
+    }
+    try {
+      setError("");
+
+      const tokens = getTokens();
+      const accessToken = tokens?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Missing access token");
+      }
+
+      await cancelMatchmaking(accessToken);
+
+      stopPolling();
+      setIsSearching(false);
+    } catch (cancelError) {
+      console.error("Cancel matchmaking failed:", cancelError);
+      setError("Failed to cancel matchmaking.");
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, []);
 
   return (
-    <div className="lobby-container">
+    <div>
       <h2>Lobby</h2>
-      {user && <p>Welcome, {user.username} (ID: {user.userId})</p>}
+      <p>Welcome, {user?.username}</p>
 
-      {!searching && (
-        <div className="lobby-actions">
-          <button onClick={handleFindMatch}>Find Match</button>
-          <button onClick={onBackToHome}>Sign Out</button>
-        </div>
+      {error && <p>{error}</p>}
+
+      {!isSearching && <button onClick={handleFindMatch}>Find Match</button>}
+
+      {isSearching && (
+        <>
+          <p>Searching for a match...</p>
+          <button onClick={handleCancelSearch}>Cancel Search</button>
+        </>
       )}
 
-      {searching && <p>Searching for opponent...</p>}
-      {error && <p>{error}</p>}
+      <button onClick={onBackToHome}>Sign Out</button>
     </div>
   );
 }
