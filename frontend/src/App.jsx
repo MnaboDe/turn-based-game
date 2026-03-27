@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "./api/auth";
 import { clearTokens } from "./api/authStorage";
+import { getMatchmakingStatus } from "./api/matchmaking";
 import {
   hasAuthCodeInUrl,
   restoreUserFromStoredTokens,
@@ -21,11 +22,41 @@ function App() {
   const processed = useRef(false);
 
   useEffect(() => {
+    const restoreActiveMatch = async (accessToken) => {
+      if (!accessToken) {
+        return null;
+      }
+
+      const statusResult = await getMatchmakingStatus(accessToken);
+
+      if (statusResult.status === "matched" && statusResult.matchId) {
+        return statusResult.matchId;
+      }
+
+      return null;
+    };
+
     const initializeApp = async () => {
       const restoredSession = await restoreUserFromStoredTokens();
 
       if (restoredSession) {
         setUser(restoredSession.user);
+
+        try {
+          const restoredMatchId = await restoreActiveMatch(
+            restoredSession.tokens?.access_token,
+          );
+
+          if (restoredMatchId) {
+            setMatchId(restoredMatchId);
+            setScreen("game");
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to restore active match:", error);
+        }
+
         setScreen("lobby");
         setIsLoading(false);
         return;
@@ -52,6 +83,21 @@ function App() {
         }
 
         setUser(callbackSession.user);
+
+        try {
+          const restoredMatchId = await restoreActiveMatch(
+            callbackSession.tokens?.access_token,
+          );
+
+          if (restoredMatchId) {
+            setMatchId(restoredMatchId);
+            setScreen("game");
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to restore active match after callback:", error);
+        }
+
         setScreen("lobby");
       } catch (error) {
         console.error("Authentication callback failed:", error);
@@ -102,7 +148,11 @@ function App() {
       )}
 
       {!isLoading && screen === "game" && (
-        <Game user={user} matchId={matchId} onBackToLobby={handleBackToLobby} />
+        <Game
+          user={user}
+          matchId={matchId}
+          onBackToLobby={handleBackToLobby}
+        />
       )}
     </main>
   );
