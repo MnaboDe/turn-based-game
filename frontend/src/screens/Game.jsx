@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getTokens } from "../api/authStorage";
 import { getCurrentMatch, makeMove } from "../api/matchmaking";
 import "./Game.css";
@@ -8,11 +8,17 @@ function Game({ user, matchId, onBackToLobby }) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
+  const pollingRef = useRef(null);
 
-  async function loadMatch() {
+  function stopPolling() {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }
+
+  async function loadMatch(showError = true) {
     try {
-      setError("");
-
       const tokens = getTokens();
       const accessToken = tokens?.access_token;
 
@@ -22,9 +28,16 @@ function Game({ user, matchId, onBackToLobby }) {
 
       const result = await getCurrentMatch(accessToken);
       setMatchInfo(result);
+
+      if (showError) {
+        setError("");
+      }
     } catch (loadError) {
       console.error("Failed to load current match:", loadError);
-      setError("Failed to load match information.");
+
+      if (showError) {
+        setError("Failed to load match information.");
+      }
     }
   }
 
@@ -36,6 +49,14 @@ function Game({ user, matchId, onBackToLobby }) {
     };
 
     initialize();
+
+    pollingRef.current = setInterval(() => {
+      loadMatch(false);
+    }, 2000);
+
+    return () => {
+      stopPolling();
+    };
   }, []);
 
   async function handleMakeMove() {
@@ -55,7 +76,7 @@ function Game({ user, matchId, onBackToLobby }) {
     } catch (moveError) {
       console.error("Failed to make move:", moveError);
       setError(moveError.message || "Failed to make move.");
-      await loadMatch();
+      await loadMatch(false);
     } finally {
       setIsSubmittingMove(false);
     }
@@ -83,12 +104,11 @@ function Game({ user, matchId, onBackToLobby }) {
           <p>{turnLabel}</p>
           <p>Move number: {nextMoveNumber}</p>
 
-          <button onClick={handleMakeMove} disabled={!isYourTurn || isSubmittingMove}>
+          <button
+            onClick={handleMakeMove}
+            disabled={!isYourTurn || isSubmittingMove}
+          >
             {isSubmittingMove ? "Making move..." : "Make Move"}
-          </button>
-
-          <button onClick={loadMatch} disabled={isSubmittingMove}>
-            Refresh
           </button>
 
           <p>Game screen is under construction.</p>
