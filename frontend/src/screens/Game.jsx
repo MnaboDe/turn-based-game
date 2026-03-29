@@ -8,6 +8,7 @@ function Game({ user, matchId, onBackToLobby }) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
+  const [selectedPitIndex, setSelectedPitIndex] = useState(null);
   const pollingRef = useRef(null);
 
   function stopPolling() {
@@ -59,7 +60,36 @@ function Game({ user, matchId, onBackToLobby }) {
     };
   }, []);
 
+  useEffect(() => {
+    setSelectedPitIndex(null);
+  }, [matchInfo?.matchId, matchInfo?.movesCount, matchInfo?.state]);
+
+  function canSelectPit(pitIndex) {
+    if (!matchInfo) {
+      return false;
+    }
+
+    if (matchInfo.state !== "active") {
+      return false;
+    }
+
+    if (!matchInfo.isYourTurn) {
+      return false;
+    }
+
+    if (isSubmittingMove) {
+      return false;
+    }
+
+    const stones = matchInfo.playerPits?.[pitIndex] ?? 0;
+    return stones > 0;
+  }
+
   async function handleMakeMove() {
+    if (selectedPitIndex === null) {
+      return;
+    }
+
     try {
       setError("");
       setIsSubmittingMove(true);
@@ -71,8 +101,9 @@ function Game({ user, matchId, onBackToLobby }) {
         throw new Error("Missing access token");
       }
 
-      const updatedMatch = await makeMove(accessToken);
+      const updatedMatch = await makeMove(accessToken, selectedPitIndex);
       setMatchInfo(updatedMatch);
+      setSelectedPitIndex(null);
     } catch (moveError) {
       console.error("Failed to make move:", moveError);
       setError(moveError.message || "Failed to make move.");
@@ -84,8 +115,25 @@ function Game({ user, matchId, onBackToLobby }) {
 
   const isYourTurn = matchInfo?.isYourTurn ?? false;
   const opponentName = matchInfo?.opponentUsername || "Unknown opponent";
-  const nextMoveNumber = matchInfo?.nextMoveNumber ?? 1;
-  const turnLabel = isYourTurn ? "Your turn" : "Opponent's turn";
+  const moveNumber = (matchInfo?.movesCount ?? 0) + 1;
+
+  let turnLabel = "Loading...";
+
+  if (matchInfo?.state === "finished") {
+    if (matchInfo.winner === "draw") {
+      turnLabel = "Draw";
+    } else {
+      turnLabel = "Game finished";
+    }
+  } else {
+    turnLabel = isYourTurn ? "Your turn" : "Opponent's turn";
+  }
+
+  const canSubmitMove =
+    matchInfo?.state === "active" &&
+    isYourTurn &&
+    selectedPitIndex !== null &&
+    !isSubmittingMove;
 
   return (
     <div className="game-container">
@@ -102,16 +150,69 @@ function Game({ user, matchId, onBackToLobby }) {
         <>
           <p>Opponent: {opponentName}</p>
           <p>{turnLabel}</p>
-          <p>Move number: {nextMoveNumber}</p>
+          <p>Move number: {moveNumber}</p>
 
-          <button
-            onClick={handleMakeMove}
-            disabled={!isYourTurn || isSubmittingMove}
-          >
-            {isSubmittingMove ? "Making move..." : "Make Move"}
+          <div className="kalah-board">
+            <div className="kalah-store">
+              {matchInfo.opponentStore}
+            </div>
+
+            <div className="kalah-middle">
+              <div className="kalah-row">
+                {matchInfo.opponentPits.map((stones, index) => (
+                  <button
+                    key={`opponent-${index}`}
+                    type="button"
+                    disabled
+                    className="kalah-pit kalah-pit-opponent"
+                  >
+                    {stones}
+                  </button>
+                ))}
+              </div>
+
+              <div className="kalah-row">
+                {matchInfo.playerPits.map((stones, index) => {
+                  const isSelectable = canSelectPit(index);
+                  const isSelected = selectedPitIndex === index;
+
+                  let className = "kalah-pit kalah-pit-player";
+
+                  if (!isSelectable) {
+                    className += " kalah-pit-disabled";
+                  }
+
+                  if (isSelected) {
+                    className += " kalah-pit-selected";
+                  }
+
+                  return (
+                    <button
+                      key={`player-${index}`}
+                      type="button"
+                      disabled={!isSelectable}
+                      className={className}
+                      onClick={() => setSelectedPitIndex(index)}
+                    >
+                      {stones}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="kalah-store">
+              {matchInfo.playerStore}
+            </div>
+          </div>
+
+          <p>
+            Selected pit: {selectedPitIndex !== null ? selectedPitIndex + 1 : "None"}
+          </p>
+
+          <button onClick={handleMakeMove} disabled={!canSubmitMove}>
+            {isSubmittingMove ? "Making move..." : "Move"}
           </button>
-
-          <p>Game screen is under construction.</p>
         </>
       )}
 

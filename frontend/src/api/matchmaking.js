@@ -62,12 +62,13 @@ export async function getCurrentMatch(accessToken) {
   return handleResponse(response);
 }
 
-export async function makeMove(accessToken) {
+export async function makeMove(accessToken, pitIndex) {
   const response = await fetch(`${authConfig.apiBaseUrl}/matches/move`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: createAuthHeaders(accessToken),
+    body: JSON.stringify({
+      pitIndex,
+    }),
   });
 
   return handleResponse(response);

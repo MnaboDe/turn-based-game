@@ -1,4 +1,100 @@
 .game-container {
-  padding-top: 80px;
+  padding: 40px 20px;
   text-align: center;
+}
+
+.kalah-board {
+  margin: 24px auto;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 20px;
+}
+
+.kalah-middle {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kalah-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.kalah-store {
+  width: 90px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #222;
+  border-radius: 20px;
+  background: #8ea6cc;
+  font-size: 32px;
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+.kalah-pit {
+  width: 78px;
+  height: 96px;
+  border: 3px solid #222;
+  border-radius: 18px;
+  font-size: 30px;
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+.kalah-pit-opponent {
+  background: #d9d9d9;
+  color: #222;
+  cursor: default;
+  opacity: 1;
+}
+
+.kalah-pit-player {
+  background: #a9d51d;
+  color: #222;
+  cursor: pointer;
+}
+
+.kalah-pit-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.kalah-pit-selected {
+  outline: 4px solid #2848c7;
+  transform: translateY(-4px);
+}
+
+.game-container button {
+  margin-top: 12px;
+  padding: 12px 22px;
+  font-size: 20px;
+  border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .kalah-board {
+    gap: 12px;
+  }
+
+  .kalah-row {
+    gap: 10px;
+  }
+
+  .kalah-store {
+    width: 72px;
+    min-height: 200px;
+    font-size: 28px;
+  }
+
+  .kalah-pit {
+    width: 64px;
+    height: 84px;
+    font-size: 26px;
+  }
 }

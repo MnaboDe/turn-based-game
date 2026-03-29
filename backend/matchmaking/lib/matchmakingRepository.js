@@ -7,6 +7,7 @@ import {
   MATCHES_TABLE,
   QUEUE_TTL_SECONDS,
 } from "./dynamo.js";
+import { createInitialBoard, applyMove } from "./kalah.js";
 
 export function getCurrentEpochSeconds() {
   return Math.floor(Date.now() / 1000);
@@ -65,6 +66,8 @@ export async function createMatchTransaction({
   player2Username,
   nowEpochSeconds,
 }) {
+  const initialBoard = createInitialBoard();
+
   await dynamoClient.send(
     new TransactWriteItemsCommand({
       TransactItems: [
@@ -117,6 +120,19 @@ export async function createMatchTransaction({
               turn: { S: player1 },
               winner: { NULL: true },
               movesCount: { N: "0" },
+              board: {
+                L: initialBoard.map((value) => ({ N: String(value) })),
+              },
+              lastMove: {
+                M: {
+                  playerId: { NULL: true },
+                  pitIndex: { NULL: true },
+                  endedInStore: { BOOL: false },
+                  capture: { BOOL: false },
+                  extraTurn: { BOOL: false },
+                },
+              },
+              finishedAt: { NULL: true },
             },
             ConditionExpression: "attribute_not_exists(matchId)",
           },
@@ -183,27 +199,51 @@ export function buildMatchView(match, currentPlayerId) {
   }
 
   const isPlayer1 = match.player1 === currentPlayerId;
-  const opponentId = isPlayer1 ? match.player2 : match.player1;
-  const opponentUsername = isPlayer1
-    ? match.player2Username
-    : match.player1Username;
+
+  const board = Array.isArray(match.board) ? match.board : createInitialBoard();
+
+  let playerPits;
+  let opponentPits;
+  let playerStore;
+  let opponentStore;
+  let opponentId;
+  let opponentUsername;
+
+  if (isPlayer1) {
+    playerPits = board.slice(0, 6);
+    opponentPits = board.slice(7, 13).reverse();
+    playerStore = board[6];
+    opponentStore = board[13];
+    opponentId = match.player2;
+    opponentUsername = match.player2Username;
+  } else {
+    playerPits = board.slice(7, 13);
+    opponentPits = board.slice(0, 6).reverse();
+    playerStore = board[13];
+    opponentStore = board[6];
+    opponentId = match.player1;
+    opponentUsername = match.player1Username;
+  }
 
   return {
     matchId: match.matchId,
     state: match.state,
     opponentId,
     opponentUsername,
-    turn: match.turn,
+    turn: match.turn ?? null,
     movesCount: Number(match.movesCount ?? 0),
-    isYourTurn: match.turn === currentPlayerId,
-    nextMoveNumber: Number(match.movesCount ?? 0) + 1,
+    isYourTurn: match.state === "active" && match.turn === currentPlayerId,
+    playerPits,
+    opponentPits,
+    playerStore,
+    opponentStore,
+    winner: match.winner ?? null,
+    lastMove: match.lastMove ?? null,
   };
 }
 
-export async function makeMove(match, currentPlayerId) {
-  const nextTurnPlayerId =
-    match.player1 === currentPlayerId ? match.player2 : match.player1;
-
+export async function makeMove(match, currentPlayerId, pitIndex) {
+  const moveResult = applyMove(match, currentPlayerId, pitIndex);
   const nowIsoString = new Date().toISOString();
 
   const result = await docClient.send(
@@ -212,17 +252,31 @@ export async function makeMove(match, currentPlayerId) {
       Key: {
         matchId: match.matchId,
       },
-      UpdateExpression:
-        "SET #turn = :nextTurn, lastUpdatedAt = :lastUpdatedAt, movesCount = movesCount + :increment",
+      UpdateExpression: `
+        SET
+          board = :board,
+          #turn = :turn,
+          #state = :state,
+          winner = :winner,
+          movesCount = :movesCount,
+          lastMove = :lastMove,
+          lastUpdatedAt = :lastUpdatedAt,
+          finishedAt = :finishedAt
+      `,
       ConditionExpression: "#state = :active AND #turn = :currentPlayerId",
       ExpressionAttributeNames: {
         "#turn": "turn",
         "#state": "state",
       },
       ExpressionAttributeValues: {
-        ":nextTurn": nextTurnPlayerId,
+        ":board": moveResult.board,
+        ":turn": moveResult.turn ?? null,
+        ":state": moveResult.state,
+        ":winner": moveResult.winner ?? null,
+        ":movesCount": moveResult.movesCount,
+        ":lastMove": moveResult.lastMove,
         ":lastUpdatedAt": nowIsoString,
-        ":increment": 1,
+        ":finishedAt": moveResult.finishedAt ?? null,
         ":active": "active",
         ":currentPlayerId": currentPlayerId,
       },

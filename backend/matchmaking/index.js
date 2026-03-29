@@ -35,7 +35,7 @@ export const handler = async (event) => {
       return await handleGetCurrentMatch(user);
     }
     if (method === "POST" && path === "/matches/move") {
-      return await handleMakeMove(user);
+      return await handleMakeMove(user, event);
     }
 
     return jsonResponse(404, { message: "Not found" });
