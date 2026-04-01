@@ -14,3 +14,8 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "frontend_bucket_name" {
+  description = "Existing S3 bucket name for frontend hosting."
+  type        = string
+}
