@@ -7,7 +7,7 @@ resource "aws_s3_bucket" "frontend" {
   }
 }
 
-# Enable static website hosting (optional for now, but useful later)
+# Enable static website hosting
 resource "aws_s3_bucket_website_configuration" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
@@ -20,7 +20,7 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   }
 }
 
-# Block all public access (we will use CloudFront later)
+# Block all public access
 resource "aws_s3_bucket_public_access_block" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
