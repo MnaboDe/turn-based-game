@@ -2,3 +2,7 @@ aws_region           = "us-east-1"
 project_name         = "turn-based-game"
 environment          = "dev"
 frontend_bucket_name = "your-frontend-bucket-name"
+cloudfront_distribution_id = "YOUR_DISTRIBUTION_ID"
+frontend_waf_web_acl_arn  = null
+frontend_cloudfront_enabled = true
+frontend_origin_id = "frontend-s3-origin"
