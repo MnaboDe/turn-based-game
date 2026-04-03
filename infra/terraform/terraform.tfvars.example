@@ -6,3 +6,5 @@ cloudfront_distribution_id = "YOUR_DISTRIBUTION_ID"
 frontend_waf_web_acl_arn  = null
 frontend_cloudfront_enabled = true
 frontend_origin_id = "frontend-s3-origin"
+waiting_queue_table_name = "WaitingQueue"
+matches_table_name       = "Matches"

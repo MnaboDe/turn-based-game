@@ -41,3 +41,13 @@ variable "frontend_origin_id" {
   description = "Origin ID for the frontend CloudFront distribution."
   type        = string
 }
+
+variable "waiting_queue_table_name" {
+  description = "Existing DynamoDB table name for the waiting queue."
+  type        = string
+}
+
+variable "matches_table_name" {
+  description = "Existing DynamoDB table name for matches."
+  type        = string
+}
