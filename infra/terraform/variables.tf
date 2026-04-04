@@ -93,3 +93,38 @@ variable "matchmaking_lambda_inline_policy_name" {
   description = "Inline policy name for the matchmaking Lambda role."
   type        = string
 }
+
+variable "api_gateway_name" {
+  description = "Existing API Gateway HTTP API name."
+  type        = string
+}
+
+variable "api_gateway_id" {
+  description = "Existing API Gateway ID."
+  type        = string
+}
+
+variable "api_gateway_integration_id" {
+  description = "Existing API Gateway integration ID."
+  type        = string
+}
+
+variable "api_gateway_cors_allow_origins" {
+  description = "Allowed origins for API Gateway CORS."
+  type        = list(string)
+}
+
+variable "api_gateway_stage_name" {
+  description = "Existing API Gateway stage name."
+  type        = string
+}
+
+variable "api_gateway_execution_arn" {
+  description = "Execution ARN for the existing API Gateway."
+  type        = string
+}
+
+variable "api_gateway_authorizer_id" {
+  description = "Existing API Gateway JWT authorizer ID."
+  type        = string
+}

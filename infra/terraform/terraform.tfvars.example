@@ -16,3 +16,13 @@ matchmaking_lambda_role_arn = "arn:aws:iam::123456789012:role/service-role/your-
 matchmaking_lambda_role_name = "matchmaking-lambda-role"
 matchmaking_lambda_basic_policy_arn = "arn:aws:iam::123456789012:policy/service-role/your-lambda-basic-policy"
 matchmaking_lambda_inline_policy_name = "MatchmakingDynamoPolicy"
+api_gateway_name           = "your-http-api-name"
+api_gateway_id             = "your-api-id"
+api_gateway_integration_id = "your-integration-id"
+api_gateway_cors_allow_origins = [
+  "http://localhost:5173",
+  "https://your-cloudfront-domain.cloudfront.net"
+]
+api_gateway_stage_name    = "$default"
+api_gateway_execution_arn = "arn:aws:execute-api:us-east-1:123456789012:your-api-id"
+api_gateway_authorizer_id = "your-authorizer-id"
