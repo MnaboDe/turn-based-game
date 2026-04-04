@@ -26,3 +26,18 @@ api_gateway_cors_allow_origins = [
 api_gateway_stage_name    = "$default"
 api_gateway_execution_arn = "arn:aws:execute-api:us-east-1:123456789012:your-api-id"
 api_gateway_authorizer_id = "your-authorizer-id"
+cognito_user_pool_name        = "your-user-pool-name"
+cognito_user_pool_id          = "your-user-pool-id"
+cognito_user_pool_client_name = "your-app-client-name"
+cognito_user_pool_client_id   = "your-app-client-id"
+cognito_domain_prefix         = "your-cognito-domain-prefix"
+
+cognito_callback_urls = [
+  "http://localhost:5173/",
+  "https://your-cloudfront-domain.cloudfront.net"
+]
+
+cognito_logout_urls = [
+  "http://localhost:5173/",
+  "https://your-cloudfront-domain.cloudfront.net"
+]

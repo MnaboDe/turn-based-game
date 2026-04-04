@@ -128,3 +128,38 @@ variable "api_gateway_authorizer_id" {
   description = "Existing API Gateway JWT authorizer ID."
   type        = string
 }
+
+variable "cognito_user_pool_name" {
+  description = "Existing Cognito User Pool name."
+  type        = string
+}
+
+variable "cognito_user_pool_id" {
+  description = "Existing Cognito User Pool ID."
+  type        = string
+}
+
+variable "cognito_user_pool_client_name" {
+  description = "Existing Cognito User Pool app client name."
+  type        = string
+}
+
+variable "cognito_user_pool_client_id" {
+  description = "Existing Cognito User Pool app client ID."
+  type        = string
+}
+
+variable "cognito_domain_prefix" {
+  description = "Existing Cognito Hosted UI domain prefix."
+  type        = string
+}
+
+variable "cognito_callback_urls" {
+  description = "Allowed callback URLs for Cognito Hosted UI."
+  type        = list(string)
+}
+
+variable "cognito_logout_urls" {
+  description = "Allowed logout URLs for Cognito Hosted UI."
+  type        = list(string)
+}

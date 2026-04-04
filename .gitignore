@@ -11,3 +11,5 @@ infra/terraform/terraform.tfvars
 infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
+
+backend/matchmacking/matchmacking.zip
