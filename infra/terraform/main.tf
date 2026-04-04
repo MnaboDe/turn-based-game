@@ -19,3 +19,5 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
     key = "index.html"
   }
 }
+
+data "aws_caller_identity" "current" {}

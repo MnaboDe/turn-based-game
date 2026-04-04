@@ -51,3 +51,30 @@ variable "matches_table_name" {
   description = "Existing DynamoDB table name for matches."
   type        = string
 }
+
+variable "matchmaking_lambda_name" {
+  description = "Existing Lambda function name for matchmaking."
+  type        = string
+}
+
+variable "matches_table_env_var_name" {
+  description = "Environment variable name for the matches table."
+  type        = string
+  default     = "MATCHES_TABLE"
+}
+
+variable "waiting_queue_table_env_var_name" {
+  description = "Environment variable name for the waiting queue table."
+  type        = string
+  default     = "WAITING_QUEUE_TABLE"
+}
+
+variable "matchmaking_lambda_package_path" {
+  description = "Path to a local Lambda deployment package."
+  type        = string
+}
+
+variable "matchmaking_lambda_role_arn" {
+  description = "Execution role ARN for the matchmaking Lambda function."
+  type        = string
+}
