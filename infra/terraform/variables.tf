@@ -78,3 +78,18 @@ variable "matchmaking_lambda_role_arn" {
   description = "Execution role ARN for the matchmaking Lambda function."
   type        = string
 }
+
+variable "matchmaking_lambda_role_name" {
+  description = "Execution role name for the matchmaking Lambda function."
+  type        = string
+}
+
+variable "matchmaking_lambda_basic_policy_arn" {
+  description = "Managed policy ARN attached to the matchmaking Lambda role."
+  type        = string
+}
+
+variable "matchmaking_lambda_inline_policy_name" {
+  description = "Inline policy name for the matchmaking Lambda role."
+  type        = string
+}
