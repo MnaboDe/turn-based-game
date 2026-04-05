@@ -71,7 +71,7 @@ resource "aws_lambda_permission" "allow_matchmaking_status" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*/matchmaking/status"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/status"
 }
 
 resource "aws_lambda_permission" "allow_matchmaking_join" {
@@ -79,7 +79,7 @@ resource "aws_lambda_permission" "allow_matchmaking_join" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*/matchmaking/join"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/join"
 }
 
 resource "aws_lambda_permission" "allow_matchmaking_cancel" {
@@ -87,7 +87,7 @@ resource "aws_lambda_permission" "allow_matchmaking_cancel" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*/matchmaking/cancel"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/cancel"
 }
 
 resource "aws_lambda_permission" "allow_matches_current" {
@@ -95,7 +95,7 @@ resource "aws_lambda_permission" "allow_matches_current" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*/matches/current"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/current"
 }
 
 resource "aws_lambda_permission" "allow_matches_move" {
@@ -103,5 +103,5 @@ resource "aws_lambda_permission" "allow_matches_move" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*/matches/move"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/move"
 }

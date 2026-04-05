@@ -109,11 +109,6 @@ variable "api_gateway_stage_name" {
   type        = string
 }
 
-variable "api_gateway_execution_arn" {
-  description = "Execution ARN for the existing API Gateway."
-  type        = string
-}
-
 variable "api_gateway_authorizer_id" {
   description = "Existing API Gateway JWT authorizer ID."
   type        = string
