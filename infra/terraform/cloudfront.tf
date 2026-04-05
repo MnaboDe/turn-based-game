@@ -7,20 +7,20 @@ resource "aws_cloudfront_distribution" "frontend" {
   web_acl_id          = var.frontend_waf_web_acl_arn
 
   tags = {
-    Name = "turn-based-game-destribution"
+    Name = "${var.project_name}-${var.environment}-cloudfront"
   }
 
   origin {
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
-    origin_id   = var.frontend_origin_id
+    domain_name                = aws_s3_bucket_website_configuration.frontend.website_endpoint
+    origin_id                  = var.frontend_origin_id
     response_completion_timeout = 0
 
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      ip_address_type = "ipv4"
+      ip_address_type        = "ipv4"
       origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -41,6 +41,6 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   viewer_certificate {
     cloudfront_default_certificate = true
-    minimum_protocol_version       = "TLSv1"
+    minimum_protocol_version       = "TLSv1.2_2021"
   }
 }
