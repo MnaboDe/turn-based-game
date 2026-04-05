@@ -2,7 +2,6 @@ aws_region           = "us-east-1"
 project_name         = "turn-based-game"
 environment          = "dev"
 frontend_bucket_name = "your-frontend-bucket-name"
-cloudfront_distribution_id = "YOUR_DISTRIBUTION_ID"
 frontend_waf_web_acl_arn  = null
 frontend_cloudfront_enabled = true
 frontend_origin_id = "frontend-s3-origin"
@@ -15,17 +14,13 @@ matchmaking_lambda_package_path = "../../backend/matchmaking/matchmaking.zip"
 matchmaking_lambda_role_name = "matchmaking-lambda-role"
 matchmaking_lambda_inline_policy_name = "MatchmakingDynamoPolicy"
 api_gateway_name           = "your-http-api-name"
-api_gateway_id             = "your-api-id"
-api_gateway_integration_id = "your-integration-id"
 api_gateway_cors_allow_origins = [
   "http://localhost:5173",
   "https://your-cloudfront-domain.cloudfront.net"
 ]
 api_gateway_stage_name    = "$default"
 cognito_user_pool_name        = "your-user-pool-name"
-cognito_user_pool_id          = "your-user-pool-id"
 cognito_user_pool_client_name = "your-app-client-name"
-cognito_user_pool_client_id   = "your-app-client-id"
 cognito_domain_prefix         = "your-cognito-domain-prefix"
 
 cognito_callback_urls = [

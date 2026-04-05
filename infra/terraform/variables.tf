@@ -20,11 +20,6 @@ variable "frontend_bucket_name" {
   type        = string
 }
 
-variable "cloudfront_distribution_id" {
-  description = "Existing CloudFront distribution ID for frontend delivery."
-  type        = string
-}
-
 variable "frontend_waf_web_acl_arn" {
   description = "WAF Web ACL ARN for the frontend CloudFront distribution."
   type        = string
@@ -89,16 +84,6 @@ variable "api_gateway_name" {
   type        = string
 }
 
-variable "api_gateway_id" {
-  description = "Existing API Gateway ID."
-  type        = string
-}
-
-variable "api_gateway_integration_id" {
-  description = "Existing API Gateway integration ID."
-  type        = string
-}
-
 variable "api_gateway_cors_allow_origins" {
   description = "Allowed origins for API Gateway CORS."
   type        = list(string)
@@ -114,18 +99,8 @@ variable "cognito_user_pool_name" {
   type        = string
 }
 
-variable "cognito_user_pool_id" {
-  description = "Existing Cognito User Pool ID."
-  type        = string
-}
-
 variable "cognito_user_pool_client_name" {
   description = "Existing Cognito User Pool app client name."
-  type        = string
-}
-
-variable "cognito_user_pool_client_id" {
-  description = "Existing Cognito User Pool app client ID."
   type        = string
 }
 
