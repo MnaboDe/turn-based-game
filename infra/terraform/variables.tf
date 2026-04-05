@@ -74,11 +74,6 @@ variable "matchmaking_lambda_package_path" {
   type        = string
 }
 
-variable "matchmaking_lambda_role_arn" {
-  description = "Execution role ARN for the matchmaking Lambda function."
-  type        = string
-}
-
 variable "matchmaking_lambda_role_name" {
   description = "Execution role name for the matchmaking Lambda function."
   type        = string

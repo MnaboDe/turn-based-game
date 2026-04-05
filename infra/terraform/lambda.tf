@@ -1,6 +1,6 @@
 resource "aws_lambda_function" "matchmaking" {
   function_name = var.matchmaking_lambda_name
-  role          = var.matchmaking_lambda_role_arn
+  role          = aws_iam_role.matchmaking_lambda.arn
   handler       = "index.handler"
   runtime       = "nodejs24.x"
   memory_size   = 128
