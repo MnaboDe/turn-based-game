@@ -95,7 +95,7 @@ resource "aws_lambda_permission" "allow_matches_current" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/current"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matches/current"
 }
 
 resource "aws_lambda_permission" "allow_matches_move" {
@@ -103,7 +103,7 @@ resource "aws_lambda_permission" "allow_matches_move" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/move"
+  source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matches/move"
 }
 
 resource "aws_apigatewayv2_authorizer" "cognito" {

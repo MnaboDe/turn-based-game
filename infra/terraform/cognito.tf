@@ -95,8 +95,8 @@ resource "aws_cognito_user_pool_client" "frontend" {
 
   supported_identity_providers = ["COGNITO"]
 
-  access_token_validity = 60
-  id_token_validity     = 60
+  access_token_validity  = 60
+  id_token_validity      = 60
   refresh_token_validity = 5
   auth_session_validity  = 3
 
