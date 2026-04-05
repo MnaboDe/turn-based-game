@@ -18,7 +18,7 @@ resource "aws_iam_role" "matchmaking_lambda" {
 
 resource "aws_iam_role_policy_attachment" "matchmaking_lambda_basic" {
   role       = aws_iam_role.matchmaking_lambda.name
-  policy_arn = var.matchmaking_lambda_basic_policy_arn
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy" "matchmaking_dynamo" {

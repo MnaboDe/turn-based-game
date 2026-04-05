@@ -79,11 +79,6 @@ variable "matchmaking_lambda_role_name" {
   type        = string
 }
 
-variable "matchmaking_lambda_basic_policy_arn" {
-  description = "Managed policy ARN attached to the matchmaking Lambda role."
-  type        = string
-}
-
 variable "matchmaking_lambda_inline_policy_name" {
   description = "Inline policy name for the matchmaking Lambda role."
   type        = string
