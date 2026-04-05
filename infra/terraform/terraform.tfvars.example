@@ -22,7 +22,6 @@ api_gateway_cors_allow_origins = [
   "https://your-cloudfront-domain.cloudfront.net"
 ]
 api_gateway_stage_name    = "$default"
-api_gateway_authorizer_id = "your-authorizer-id"
 cognito_user_pool_name        = "your-user-pool-name"
 cognito_user_pool_id          = "your-user-pool-id"
 cognito_user_pool_client_name = "your-app-client-name"

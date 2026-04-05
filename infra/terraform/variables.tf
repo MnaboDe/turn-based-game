@@ -109,11 +109,6 @@ variable "api_gateway_stage_name" {
   type        = string
 }
 
-variable "api_gateway_authorizer_id" {
-  description = "Existing API Gateway JWT authorizer ID."
-  type        = string
-}
-
 variable "cognito_user_pool_name" {
   description = "Existing Cognito User Pool name."
   type        = string

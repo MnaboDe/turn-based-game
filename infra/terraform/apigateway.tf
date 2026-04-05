@@ -25,7 +25,7 @@ resource "aws_apigatewayv2_route" "matches_current" {
   route_key          = "GET /matches/current"
   target             = "integrations/${aws_apigatewayv2_integration.matchmaking_lambda.id}"
   authorization_type = "JWT"
-  authorizer_id      = var.api_gateway_authorizer_id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "matches_move" {
@@ -33,7 +33,7 @@ resource "aws_apigatewayv2_route" "matches_move" {
   route_key          = "POST /matches/move"
   target             = "integrations/${aws_apigatewayv2_integration.matchmaking_lambda.id}"
   authorization_type = "JWT"
-  authorizer_id      = var.api_gateway_authorizer_id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "matchmaking_status" {
@@ -41,7 +41,7 @@ resource "aws_apigatewayv2_route" "matchmaking_status" {
   route_key          = "GET /matchmaking/status"
   target             = "integrations/${aws_apigatewayv2_integration.matchmaking_lambda.id}"
   authorization_type = "JWT"
-  authorizer_id      = var.api_gateway_authorizer_id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "matchmaking_join" {
@@ -49,7 +49,7 @@ resource "aws_apigatewayv2_route" "matchmaking_join" {
   route_key          = "POST /matchmaking/join"
   target             = "integrations/${aws_apigatewayv2_integration.matchmaking_lambda.id}"
   authorization_type = "JWT"
-  authorizer_id      = var.api_gateway_authorizer_id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "matchmaking_cancel" {
@@ -57,7 +57,7 @@ resource "aws_apigatewayv2_route" "matchmaking_cancel" {
   route_key          = "POST /matchmaking/cancel"
   target             = "integrations/${aws_apigatewayv2_integration.matchmaking_lambda.id}"
   authorization_type = "JWT"
-  authorizer_id      = var.api_gateway_authorizer_id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_stage" "default" {
@@ -104,4 +104,16 @@ resource "aws_lambda_permission" "allow_matches_move" {
   function_name = aws_lambda_function.matchmaking.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.matchmaking.execution_arn}/*/*/matchmaking/move"
+}
+
+resource "aws_apigatewayv2_authorizer" "cognito" {
+  api_id           = aws_apigatewayv2_api.matchmaking.id
+  name             = "${var.project_name}-${var.environment}-cognito-authorizer"
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+
+  jwt_configuration {
+    audience = [aws_cognito_user_pool_client.frontend.id]
+    issuer   = "https://${aws_cognito_user_pool.main.endpoint}"
+  }
 }
