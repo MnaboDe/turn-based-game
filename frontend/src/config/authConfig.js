@@ -1,7 +1,7 @@
 export const authConfig = {
-  region: "us-east-1",
-  cognitoDomain: "https://us-east-1kitzazvvy.auth.us-east-1.amazoncognito.com",
-  clientId: "46rh9ho6cs79i1ojmmjhbogm8l",
-  redirectUri: "https://decou9upw106j.cloudfront.net",
-  apiBaseUrl: "https://9wx2pipthb.execute-api.us-east-1.amazonaws.com",
+  region: import.meta.env.VITE_AWS_REGION,
+  cognitoDomain: import.meta.env.VITE_COGNITO_DOMAIN,
+  clientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+  redirectUri: import.meta.env.VITE_REDIRECT_URI,
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
 };
