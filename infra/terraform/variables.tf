@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "project_name" {
-  description = "Project name used in tags and resource naming."
+  description = "Project name used in resource naming and tagging."
   type        = string
 }
 
@@ -16,12 +16,12 @@ variable "environment" {
 }
 
 variable "frontend_bucket_name" {
-  description = "Existing S3 bucket name for frontend hosting."
+  description = "S3 bucket name for frontend hosting."
   type        = string
 }
 
 variable "frontend_waf_web_acl_arn" {
-  description = "WAF Web ACL ARN for the frontend CloudFront distribution."
+  description = "Optional WAF Web ACL ARN for the frontend CloudFront distribution."
   type        = string
   default     = null
 }
@@ -38,17 +38,17 @@ variable "frontend_origin_id" {
 }
 
 variable "waiting_queue_table_name" {
-  description = "Existing DynamoDB table name for the waiting queue."
+  description = "DynamoDB table name for the waiting queue."
   type        = string
 }
 
 variable "matches_table_name" {
-  description = "Existing DynamoDB table name for matches."
+  description = "DynamoDB table name for matches."
   type        = string
 }
 
 variable "matchmaking_lambda_name" {
-  description = "Existing Lambda function name for matchmaking."
+  description = "Lambda function name for matchmaking."
   type        = string
 }
 
@@ -65,22 +65,22 @@ variable "waiting_queue_table_env_var_name" {
 }
 
 variable "matchmaking_lambda_package_path" {
-  description = "Path to a local Lambda deployment package."
+  description = "Path to the local Lambda deployment package."
   type        = string
 }
 
 variable "matchmaking_lambda_role_name" {
-  description = "Execution role name for the matchmaking Lambda function."
+  description = "IAM role name for the matchmaking Lambda function."
   type        = string
 }
 
 variable "matchmaking_lambda_inline_policy_name" {
-  description = "Inline policy name for the matchmaking Lambda role."
+  description = "Inline IAM policy name for the matchmaking Lambda function."
   type        = string
 }
 
 variable "api_gateway_name" {
-  description = "Existing API Gateway HTTP API name."
+  description = "HTTP API name."
   type        = string
 }
 
@@ -90,22 +90,22 @@ variable "api_gateway_cors_allow_origins" {
 }
 
 variable "api_gateway_stage_name" {
-  description = "Existing API Gateway stage name."
+  description = "API Gateway stage name."
   type        = string
 }
 
 variable "cognito_user_pool_name" {
-  description = "Existing Cognito User Pool name."
+  description = "Cognito User Pool name."
   type        = string
 }
 
 variable "cognito_user_pool_client_name" {
-  description = "Existing Cognito User Pool app client name."
+  description = "Cognito User Pool app client name."
   type        = string
 }
 
 variable "cognito_domain_prefix" {
-  description = "Existing Cognito Hosted UI domain prefix."
+  description = "Cognito Hosted UI domain prefix."
   type        = string
 }
 

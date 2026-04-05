@@ -1,34 +1,40 @@
-aws_region           = "us-east-1"
-project_name         = "turn-based-game"
-environment          = "dev"
-frontend_bucket_name = "your-frontend-bucket-name"
-frontend_waf_web_acl_arn  = null
+aws_region   = "us-east-1"
+project_name = "turn-based-game"
+environment  = "dev"
+
+frontend_bucket_name        = "turn-based-game-dev-site-your-unique-suffix"
 frontend_cloudfront_enabled = true
-frontend_origin_id = "frontend-s3-origin"
-waiting_queue_table_name = "WaitingQueue"
-matches_table_name       = "Matches"
-matchmaking_lambda_name          = "matchmakingHandler"
+frontend_origin_id          = "frontend-origin"
+frontend_waf_web_acl_arn    = null
+
+waiting_queue_table_name = "turn-based-game-dev-waiting-queue"
+matches_table_name       = "turn-based-game-dev-matches"
+
+matchmaking_lambda_name               = "turn-based-game-dev-matchmaking"
+matchmaking_lambda_package_path       = "../../backend/matchmaking/matchmaking.zip"
+matchmaking_lambda_role_name          = "turn-based-game-dev-matchmaking-role"
+matchmaking_lambda_inline_policy_name = "turn-based-game-dev-matchmaking-dynamo"
+
 matches_table_env_var_name       = "MATCHES_TABLE"
 waiting_queue_table_env_var_name = "WAITING_QUEUE_TABLE"
-matchmaking_lambda_package_path = "../../backend/matchmaking/matchmaking.zip"
-matchmaking_lambda_role_name = "matchmaking-lambda-role"
-matchmaking_lambda_inline_policy_name = "MatchmakingDynamoPolicy"
-api_gateway_name           = "your-http-api-name"
+
+api_gateway_name = "turn-based-game-dev-api"
 api_gateway_cors_allow_origins = [
   "http://localhost:5173",
   "https://your-cloudfront-domain.cloudfront.net"
 ]
-api_gateway_stage_name    = "$default"
-cognito_user_pool_name        = "your-user-pool-name"
-cognito_user_pool_client_name = "your-app-client-name"
-cognito_domain_prefix         = "your-cognito-domain-prefix"
+api_gateway_stage_name = "$default"
+
+cognito_user_pool_name        = "turn-based-game-dev-users"
+cognito_user_pool_client_name = "turn-based-game-dev-client"
+cognito_domain_prefix         = "turn-based-game-dev-auth-your-unique-suffix"
 
 cognito_callback_urls = [
   "http://localhost:5173/",
-  "https://your-cloudfront-domain.cloudfront.net"
+  "https://your-cloudfront-domain.cloudfront.net/"
 ]
 
 cognito_logout_urls = [
   "http://localhost:5173/",
-  "https://your-cloudfront-domain.cloudfront.net"
+  "https://your-cloudfront-domain.cloudfront.net/"
 ]
