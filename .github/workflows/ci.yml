@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  terraform-check:
+    name: Terraform check
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init without backend
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+  frontend-build:
+    name: Frontend build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_AWS_REGION: eu-central-1
+          VITE_COGNITO_DOMAIN: https://example.auth.eu-central-1.amazoncognito.com
+          VITE_COGNITO_CLIENT_ID: ci-placeholder-client-id
+          VITE_REDIRECT_URI: https://example.cloudfront.net/
+          VITE_API_BASE_URL: https://example.execute-api.eu-central-1.amazonaws.com/
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+  lambda-package:
+    name: Lambda package
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/matchmaking
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/matchmaking/package-lock.json
+
+      - name: Install Lambda dependencies
+        run: npm ci
+
+      - name: Create Lambda zip
+        run: |
+          mkdir -p ../../artifacts
+          zip -r ../../artifacts/matchmaking.zip . -x "matchmaking.zip"
+
+      - name: Upload Lambda artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-zip
+          path: artifacts/matchmaking.zip
