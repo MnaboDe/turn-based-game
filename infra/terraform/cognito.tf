@@ -121,7 +121,7 @@ resource "aws_cognito_user_pool_domain" "main" {
 }
 
 resource "aws_cognito_managed_login_branding" "frontend" {
-  user_pool_id                  = aws_cognito_user_pool.main.id
-  client_id                     = aws_cognito_user_pool_client.frontend.id
-  use_cognito_provided_values   = true
+  user_pool_id                = aws_cognito_user_pool.main.id
+  client_id                   = aws_cognito_user_pool_client.frontend.id
+  use_cognito_provided_values = true
 }
