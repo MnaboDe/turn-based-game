@@ -152,3 +152,91 @@ jobs:
 
       - name: Read Terraform outputs
         run: terraform output -json
+
+  deploy-app:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - terraform-check
+      - frontend-build
+      - lambda-package
+      - aws-auth-smoke-test
+      - terraform-output-smoke-test
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Lambda artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-zip
+          path: artifacts
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials from GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+
+      - name: Terraform init with backend
+        working-directory: infra/terraform
+        run: terraform init -backend-config="backend.hcl"
+
+      - name: Export Terraform outputs
+        working-directory: infra/terraform
+        run: |
+          echo "AWS_REGION=$(terraform output -raw aws_region)" >> $GITHUB_ENV
+          echo "API_BASE_URL=$(terraform output -raw api_gateway_endpoint)" >> $GITHUB_ENV
+          echo "COGNITO_DOMAIN=$(terraform output -raw cognito_hosted_ui_base_url)" >> $GITHUB_ENV
+          echo "COGNITO_CLIENT_ID=$(terraform output -raw cognito_user_pool_client_id)" >> $GITHUB_ENV
+          echo "FRONTEND_BUCKET_NAME=$(terraform output -raw frontend_bucket_name)" >> $GITHUB_ENV
+          echo "CLOUDFRONT_DISTRIBUTION_ID=$(terraform output -raw frontend_cloudfront_distribution_id)" >> $GITHUB_ENV
+          echo "CLOUDFRONT_DOMAIN_NAME=$(terraform output -raw frontend_cloudfront_domain_name)" >> $GITHUB_ENV
+          echo "MATCHMAKING_LAMBDA_NAME=$(terraform output -raw matchmaking_lambda_name)" >> $GITHUB_ENV
+          echo "VITE_REDIRECT_URI=https://$(terraform output -raw frontend_cloudfront_domain_name)/" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend for deploy
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_AWS_REGION: ${{ env.AWS_REGION }}
+          VITE_COGNITO_DOMAIN: ${{ env.COGNITO_DOMAIN }}
+          VITE_COGNITO_CLIENT_ID: ${{ env.COGNITO_CLIENT_ID }}
+          VITE_REDIRECT_URI: ${{ env.VITE_REDIRECT_URI }}
+          VITE_API_BASE_URL: ${{ env.API_BASE_URL }}
+
+      - name: Deploy Lambda code
+        run: |
+          aws lambda update-function-code \
+            --function-name "$MATCHMAKING_LAMBDA_NAME" \
+            --zip-file "fileb://artifacts/matchmaking.zip"
+
+      - name: Deploy frontend to S3
+        run: |
+          aws s3 sync frontend/dist/ "s3://$FRONTEND_BUCKET_NAME" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --paths "/*"
