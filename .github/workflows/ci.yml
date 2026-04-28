@@ -121,3 +121,34 @@ jobs:
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
+
+  terraform-output-smoke-test:
+    name: Terraform output smoke test
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials from GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+
+      - name: Terraform init with backend
+        run: terraform init -backend-config="backend.hcl"
+
+      - name: Read Terraform outputs
+        run: terraform output -json
