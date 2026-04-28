@@ -15,5 +15,12 @@ infra/terraform/terraform.tfvars
 infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
+infra/terraform/terraform.tfstate.pre-migration.backup
+infra/terraform/terraform.tfstate.backup.pre-migration
 
-backend/matchmacking/matchmacking.zip
+infra/bootstrap-state/terraform.tfvars
+infra/bootstrap-state/.terraform/
+infra/bootstrap-state/*.tfstate
+infra/bootstrap-state/*.tfstate.*
+
+backend/matchmaking/matchmaking.zip

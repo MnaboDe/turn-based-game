@@ -1,0 +1,4 @@
+aws_region                  = "eu-central-1"
+project_name                = "turn-based-game"
+environment                 = "dev"
+terraform_state_bucket_name = "turn-based-game-tfstate-eu-central-1-432409642102"
