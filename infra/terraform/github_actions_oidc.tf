@@ -74,3 +74,55 @@ resource "aws_iam_role_policy" "github_actions_state_access" {
     ]
   })
 }
+resource "aws_iam_role_policy" "github_actions_app_deploy" {
+  name = "${var.project_name}-${var.environment}-github-actions-app-deploy"
+  role = aws_iam_role.github_actions_deploy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "UpdateLambdaCode"
+        Effect = "Allow"
+        Action = [
+          "lambda:UpdateFunctionCode"
+        ]
+        Resource = [
+          "arn:aws:lambda:eu-central-1:432409642102:function:turn-based-game-dev-matchmaking"
+        ]
+      },
+      {
+        Sid    = "FrontendBucketList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::turn-based-game-dev-site-euc1-05042026-mna"
+        ]
+      },
+      {
+        Sid    = "FrontendBucketObjects"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::turn-based-game-dev-site-euc1-05042026-mna/*"
+        ]
+      },
+      {
+        Sid    = "CloudFrontInvalidation"
+        Effect = "Allow"
+        Action = [
+          "cloudfront:CreateInvalidation"
+        ]
+        Resource = [
+          "arn:aws:cloudfront::432409642102:distribution/E2BBS4XYS9PQ0M"
+        ]
+      }
+    ]
+  })
+}
