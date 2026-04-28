@@ -41,3 +41,36 @@ resource "aws_iam_role" "github_actions_deploy" {
 
   assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
 }
+
+resource "aws_iam_role_policy" "github_actions_state_access" {
+  name = "${var.project_name}-${var.environment}-github-actions-state-access"
+  role = aws_iam_role.github_actions_deploy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "TerraformStateBucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::turn-based-game-tfstate-dev-a1b2c3d4"
+        ]
+      },
+      {
+        Sid    = "TerraformStateObjectAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::turn-based-game-tfstate-dev-a1b2c3d4/*"
+        ]
+      }
+    ]
+  })
+}
