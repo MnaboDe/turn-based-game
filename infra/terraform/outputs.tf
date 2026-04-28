@@ -72,3 +72,7 @@ output "cognito_hosted_ui_base_url" {
   description = "Base URL for Cognito Hosted UI."
   value       = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com"
 }
+
+output "github_actions_deploy_role_arn" {
+  value = aws_iam_role.github_actions_deploy.arn
+}

@@ -103,3 +103,21 @@ jobs:
         with:
           name: lambda-zip
           path: artifacts/matchmaking.zip
+
+  aws-auth-smoke-test:
+    name: AWS auth smoke test
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials from GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
